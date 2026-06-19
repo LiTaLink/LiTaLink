@@ -13,9 +13,12 @@
 .file-upload-info{min-width:0}
 .file-upload-name{font-weight:bold;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .file-upload-meta{font-size:13px;color:#374151;margin-top:3px}
-.file-print-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
-.file-print-actions button{width:auto;margin:0;padding:8px 12px;font-size:13px;white-space:nowrap}
-.file-print-actions button.active-choice{outline:3px solid #111827;box-shadow:0 0 0 2px #fff inset}
+.file-print-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.file-print-actions button{width:auto !important;margin:2px;padding:4px 8px;font-size:11px;white-space:nowrap;border-radius:6px}
+.file-print-actions button.active-choice{outline:2px solid #111827;box-shadow:0 0 0 2px #fff inset}
+.file-laminate-btn{width:auto !important;margin:2px;padding:4px 8px;font-size:11px;white-space:nowrap;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.file-laminate-btn.active-choice{outline:2px solid #111827;box-shadow:0 0 0 2px #fff inset}
+.file-laminate-btn:hover{opacity:.9}
 @media(max-width:720px){.file-upload-row{grid-template-columns:1fr}.file-print-actions{justify-content:flex-start}}
 
 .admin-action-menu{position:relative;display:inline-block}
@@ -194,7 +197,7 @@
       <label>Phone Number</label><input type="tel" id="customerPhone" maxlength="15" required />
       <label>Upload Document(s)</label><input type="file" id="documentFile" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" multiple />
       <label>Number of Pages</label><input type="number" id="pages" min="1" max="500" value="1" readonly required />
-      <small>Pages are counted automatically. Images are counted as 1 page each. You may upload more than one file.</small>
+      <small>Pages are counted automatically. Images are counted as 1 page each. You may upload more than one file. Max file size: 45 MB per file.</small>
       <div id="fileOptionsBox" class="notice hidden"></div>
       <label>Default Print Type</label><select id="printType" onchange="calculatePrice()"><option value="bw">Black & White</option><option value="colour">Colour</option></select>
       <label>Delivery Area</label><select id="deliveryArea" required></select>
@@ -205,9 +208,9 @@
       <div class="price-box" id="priceBox"></div>
       <label><input type="checkbox" id="acceptTerms" style="width:auto;margin-right:8px" required /> I confirm that I have the legal right to upload/print these files and accept the <a href="LiTaLink_Privacy_and_Terms_Official.pdf" target="_blank" rel="noopener">LiTaLink™ Privacy Notice, Terms & Conditions, and User Responsibility Policy</a>.</label><button type="submit">Submit Order</button>
     </form>
-    <div class="card" id="customerPricingBox"><h3>Pricing</h3><p><b>Black & White:</b> R3 per page</p><p><b>Colour:</b> R5 per page</p><p><b>Delivery fee:</b> R25</p><p><b>Free delivery:</b> When printing cost is R30 or more</p></div>
+    <div class="card" id="customerPricingBox"><h3>Pricing</h3><p><b>Black & White:</b> R3 per page</p><p><b>Colour:</b> R5 per page</p><p><b>Lamination:</b> R10 per page</p><p><b>Delivery fee:</b> R25</p><p><b>Free delivery:</b> When printing cost is R30 or more</p></div>
   </div>
-  <div class="card"><h3>My Orders</h3><div style="overflow-x:auto"><table class="customer-orders-table"><thead><tr><th>Order No.</th><th>Files</th><th>Pages</th><th>Type</th><th>Delivery</th><th>Payment</th><th>Delivery Status</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="customerOrders"></tbody></table></div></div>
+  <div class="card"><h3>My Orders</h3><div style="overflow-x:auto"><table class="customer-orders-table"><thead><tr><th>Order No.</th><th>Files</th><th>Pages</th><th>Type</th><th>Lamination</th><th>Delivery</th><th>Payment</th><th>Delivery Status</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="customerOrders"></tbody></table></div></div>
 </section>
 
 <section id="stationerySection" class="hidden">
@@ -278,7 +281,7 @@
   </div>
 
   <div id="adminTab_orders" class="admin-tab-panel hidden">
-    <div class="card"><h3>All Orders</h3><div class="filter-row"><input type="text" id="adminSearch" placeholder="Search name, order no, phone, file..." oninput="renderAdminOrders()" /><select id="statusFilter" onchange="renderAdminOrders()"><option value="">All statuses</option><option value="Pending">Pending</option><option value="Printing">Printing</option><option value="Ready">Ready</option><option value="Cancelled">Cancelled</option><option value="Delivered">Delivered</option></select><button onclick="exportOrdersCSV()">Export CSV</button></div><div style="overflow-x:auto"><table class="adminOrdersTable"><thead><tr><th>Order No.</th><th>Client</th><th>Contact</th><th>Files</th><th>Pages</th><th>Type</th><th>Delivery</th><th>Payment</th><th>Delivery Status</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminOrders"></tbody></table></div></div>
+    <div class="card"><h3>All Orders</h3><div class="filter-row"><input type="text" id="adminSearch" placeholder="Search name, order no, phone, file..." oninput="renderAdminOrders()" /><select id="statusFilter" onchange="renderAdminOrders()"><option value="">All statuses</option><option value="Pending">Pending</option><option value="Printing">Printing</option><option value="Ready">Ready</option><option value="Cancelled">Cancelled</option><option value="Delivered">Delivered</option></select><button onclick="exportOrdersCSV()">Export CSV</button></div><div style="overflow-x:auto"><table class="adminOrdersTable"><thead><tr><th>Order No.</th><th>Client</th><th>Contact</th><th>Files</th><th>Pages</th><th>Type</th><th>Lamination</th><th>Delivery</th><th>Payment</th><th>Delivery Status</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminOrders"></tbody></table></div></div>
     <div class="admin-two-col">
       <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('adminStationeryOrdersPanel')"><h3>Stationery Orders</h3><span id="adminStationeryOrdersPanelIcon">▶</span></div><div id="adminStationeryOrdersPanel" class="hidden"><div style="overflow-x:auto"><table><thead><tr><th>Order No.</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminStationeryOrders"></tbody></table></div></div></div>
       <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('adminWallArtOrdersPanel')"><h3>Wall Art Inspo Orders</h3><span id="adminWallArtOrdersPanelIcon">▶</span></div><div id="adminWallArtOrdersPanel" class="hidden"><div style="overflow-x:auto"><table><thead><tr><th>Order No.</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminWallArtOrders"></tbody></table></div></div></div>
@@ -304,7 +307,7 @@
 
   <div id="adminTab_store" class="admin-tab-panel hidden">
     <div class="admin-two-col">
-      <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('printingPricesPanel')"><h3>Manage Printing Prices</h3><span id="printingPricesPanelIcon">▶</span></div><div id="printingPricesPanel" class="hidden"><p style="color:#6b7280;margin-top:4px">Admin can update all print and delivery pricing used by customer orders.</p><div class="grid"><div><label>Black & White price per page (R)</label><input type="number" id="priceBw" min="0" step="0.01" /><label>Colour price per page (R)</label><input type="number" id="priceColour" min="0" step="0.01" /><label>Delivery fee (R)</label><input type="number" id="priceDeliveryFee" min="0" step="0.01" /><label>Free delivery minimum printing cost (R)</label><input type="number" id="priceFreeDeliveryMinimum" min="0" step="0.01" /><button onclick="savePrintingPrices()">Save Printing Prices</button></div><div id="printingPriceStatus"></div></div></div></div>
+      <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('printingPricesPanel')"><h3>Manage Printing Prices</h3><span id="printingPricesPanelIcon">▶</span></div><div id="printingPricesPanel" class="hidden"><p style="color:#6b7280;margin-top:4px">Admin can update all print and delivery pricing used by customer orders.</p><div class="grid"><div><label>Black & White price per page (R)</label><input type="number" id="priceBw" min="0" step="0.01" /><label>Colour price per page (R)</label><input type="number" id="priceColour" min="0" step="0.01" /><label>Lamination price per page (R)</label><input type="number" id="priceLamination" min="0" step="0.01" value="10" /><label>Delivery fee (R)</label><input type="number" id="priceDeliveryFee" min="0" step="0.01" /><label>Free delivery minimum printing cost (R)</label><input type="number" id="priceFreeDeliveryMinimum" min="0" step="0.01" /><button onclick="savePrintingPrices()">Save Printing Prices</button></div><div id="printingPriceStatus"></div></div></div></div>
       <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('stockPanel')"><h3>Stock</h3><span id="stockPanelIcon">▶</span></div><div id="stockPanel" class="hidden"><div class="grid"><div><label>Paper Stock (Sheets)</label><input type="number" id="paperStock" min="0" value="0" /><label>Ink/Toner Level (%)</label><input type="number" id="inkStock" min="0" max="100" value="0" /><button onclick="saveStock()">Save Stock</button></div><div id="stockStatus"></div></div></div></div>
     </div>
 
@@ -433,6 +436,7 @@ function updateCustomerPricingDisplay(){
     <h3>Pricing</h3>
     <p><b>Black & White:</b> R${formatRand(printingPrices.bw)} per page</p>
     <p><b>Colour:</b> R${formatRand(printingPrices.colour)} per page</p>
+    <p><b>Lamination:</b> R${formatRand(printingPrices.lamination)} per page</p>
     <p><b>Delivery fee:</b> R${formatRand(printingPrices.deliveryFee)}</p>
     <p><b>Free delivery:</b> When printing cost is R${formatRand(printingPrices.freeDeliveryMinimum)} or more</p>
   `;
@@ -445,15 +449,16 @@ const SUPABASE_URL="https://xahttaurqlprimdltobd.supabase.co";
 const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhaHR0YXVycWxwcmltZGx0b2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NjcxMjIsImV4cCI6MjA5NjE0MzEyMn0.fLvQsJl-POngNBZswX-VUyQrHxoKqzqIYVSM_sfjl6M";
 const supabaseReady=SUPABASE_URL.startsWith("https://")&&SUPABASE_URL.includes(".supabase.co")&&SUPABASE_ANON_KEY.length>40&&!SUPABASE_URL.includes("PASTE_YOUR_NEW_SUPABASE")&&!SUPABASE_ANON_KEY.includes("PASTE_YOUR_NEW_SUPABASE")&&window.supabase;
 const db=supabaseReady?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
-const FALLBACK_ADMIN_EMAIL="admin@mkprint.co.za"; // Only used as display fallback. Real admin access comes from the profiles table.
+const FALLBACK_ADMIN_EMAIL="admin@mkprint.co.za";
 const adminUser={email:FALLBACK_ADMIN_EMAIL,role:"admin",name:"Admin",phone:""};
 const adminWhatsAppNumber="27766473143";
 const paymentProofBucket="payment-proofs";
 const stationeryImageBucket="stationery-images";
 const wallArtImageBucket="wall-art-images";
-const defaultPrintingPrices={bw:3,colour:5,deliveryFee:25,freeDeliveryMinimum:30};
+const defaultPrintingPrices={bw:3,colour:5,lamination:10,deliveryFee:25,freeDeliveryMinimum:30};
 let printingPrices={...defaultPrintingPrices};
-const maxFileSize=10*1024*1024,storageBucket="order-documents";
+const maxFileSize=45 * 1024 * 1024; // 45MB
+const storageBucket="order-documents";
 const allowedUploadExtensions=["pdf","jpg","jpeg","png","gif","webp"];
 const allowedUploadMimeTypes=["application/pdf","image/jpeg","image/png","image/gif","image/webp"];
 const blockedFileNameWords=[];
@@ -902,8 +907,8 @@ async function changeWallArtOrderStatus(orderNo,status){
  await saveWallArtLocal();renderAdminWallArtOrders();renderCustomerWallArtOrders();
 }
 
-function mapOrderFromDb(o){return{orderNo:o.order_no,userEmail:o.user_email,customerName:o.customer_name,customerPhone:o.customer_phone,fileName:o.file_name,filePath:o.file_path||"",pages:o.pages,printType:o.print_type,rate:o.rate,printCost:o.print_cost,deliveryArea:o.delivery_area,deliveryTime:o.delivery_time,deliveryFee:o.delivery_fee,total:o.total,notes:o.notes||"",paymentMethod:o.payment_method||"Cash",paymentStatus:o.payment_status||"Pending",paymentProofPath:o.payment_proof_path||"",deliveryStatus:o.delivery_status||"Not Dispatched",stockDeducted:o.stock_deducted||false,rating:o.rating||0,review:o.review||"",status:o.status,date:o.order_date||new Date(o.created_at).toLocaleString()};}
-function mapOrderToDb(o){return{order_no:o.orderNo,user_email:o.userEmail,customer_name:o.customerName,customer_phone:o.customerPhone,file_name:o.fileName,file_path:o.filePath||"",pages:o.pages,print_type:o.printType,rate:o.rate,print_cost:o.printCost,delivery_area:o.deliveryArea,delivery_time:o.deliveryTime,delivery_fee:o.deliveryFee,total:o.total,notes:o.notes,payment_method:o.paymentMethod||"Cash",payment_status:o.paymentStatus||"Pending",payment_proof_path:o.paymentProofPath||"",delivery_status:o.deliveryStatus||"Not Dispatched",stock_deducted:o.stockDeducted||false,rating:o.rating||0,review:o.review||"",status:o.status,order_date:o.date};}
+function mapOrderFromDb(o){return{orderNo:o.order_no,userEmail:o.user_email,customerName:o.customer_name,customerPhone:o.customer_phone,fileName:o.file_name,filePath:o.file_path||"",pages:o.pages,printType:o.print_type,rate:o.rate,printCost:o.print_cost,laminationTotal:o.lamination_total||0,laminationDetails:o.lamination_details||[],deliveryArea:o.delivery_area,deliveryTime:o.delivery_time,deliveryFee:o.delivery_fee,total:o.total,notes:o.notes||"",paymentMethod:o.payment_method||"Cash",paymentStatus:o.payment_status||"Pending",paymentProofPath:o.payment_proof_path||"",deliveryStatus:o.delivery_status||"Not Dispatched",stockDeducted:o.stock_deducted||false,rating:o.rating||0,review:o.review||"",status:o.status,date:o.order_date||new Date(o.created_at).toLocaleString()};}
+function mapOrderToDb(o){return{order_no:o.orderNo,user_email:o.userEmail,customer_name:o.customerName,customer_phone:o.customerPhone,file_name:o.fileName,file_path:o.filePath||"",pages:o.pages,print_type:o.printType,rate:o.rate,print_cost:o.printCost,lamination_total:o.laminationTotal||0,lamination_details:o.laminationDetails||[],delivery_area:o.deliveryArea,delivery_time:o.deliveryTime,delivery_fee:o.deliveryFee,total:o.total,notes:o.notes,payment_method:o.paymentMethod||"Cash",payment_status:o.paymentStatus||"Pending",payment_proof_path:o.paymentProofPath||"",delivery_status:o.deliveryStatus||"Not Dispatched",stock_deducted:o.stockDeducted||false,rating:o.rating||0,review:o.review||"",status:o.status,order_date:o.date};}
 async function saveCustomers(){if(db)return;localSet("mkCustomers",customerUsers);}
 async function saveOrders(){if(db)return;localSet("printOrders",orders);}
 async function saveDeliveryAreas(){if(db)return;localSet("deliveryAreas",deliveryAreas);}
@@ -1161,10 +1166,11 @@ async function savePrintingPrices(){
  if(!currentUser||currentUser.role!=="admin"){alert("Only admin can change printing prices.");return;}
  const bw=Number(document.getElementById("priceBw").value);
  const colour=Number(document.getElementById("priceColour").value);
+ const lamination=Number(document.getElementById("priceLamination").value);
  const deliveryFee=Number(document.getElementById("priceDeliveryFee").value);
  const freeDeliveryMinimum=Number(document.getElementById("priceFreeDeliveryMinimum").value);
- if([bw,colour,deliveryFee,freeDeliveryMinimum].some(v=>Number.isNaN(v)||v<0)){alert("Enter valid prices. Values cannot be negative.");return;}
- printingPrices={bw,colour,deliveryFee,freeDeliveryMinimum};
+ if([bw,colour,lamination,deliveryFee,freeDeliveryMinimum].some(v=>Number.isNaN(v)||v<0)){alert("Enter valid prices. Values cannot be negative.");return;}
+ printingPrices={bw,colour,lamination,deliveryFee,freeDeliveryMinimum};
  if(db){await db.from("app_settings").upsert({key:"printing_prices",value:printingPrices});}else{savePrintingPricesLocal();}
  updatePricingDisplay();
  calculatePrice();
@@ -1173,7 +1179,7 @@ async function savePrintingPrices(){
  updateCustomerPricingDisplay();
 }
 function updatePricingDisplay(){
- const bw=Number(printingPrices.bw||0), colour=Number(printingPrices.colour||0), deliveryFee=Number(printingPrices.deliveryFee||0), freeMin=Number(printingPrices.freeDeliveryMinimum||0);
+ const bw=Number(printingPrices.bw||0), colour=Number(printingPrices.colour||0), lamination=Number(printingPrices.lamination||10), deliveryFee=Number(printingPrices.deliveryFee||0), freeMin=Number(printingPrices.freeDeliveryMinimum||0);
  const printType=document.getElementById("printType");
  if(printType){
   const old=printType.value||"bw";
@@ -1181,11 +1187,11 @@ function updatePricingDisplay(){
   printType.value=old;
  }
  const pricingCard=document.getElementById("customerPricingBox");
- if(pricingCard){pricingCard.innerHTML=`<h3>Pricing</h3><p><b>Black & White:</b> R${bw} per page</p><p><b>Colour:</b> R${colour} per page</p><p><b>Delivery fee:</b> R${deliveryFee}</p><p><b>Free delivery:</b> When printing cost is R${freeMin} or more</p>`;}
- const ids={priceBw:bw,priceColour:colour,priceDeliveryFee:deliveryFee,priceFreeDeliveryMinimum:freeMin};
+ if(pricingCard){pricingCard.innerHTML=`<h3>Pricing</h3><p><b>Black & White:</b> R${bw} per page</p><p><b>Colour:</b> R${colour} per page</p><p><b>Lamination:</b> R${lamination} per page</p><p><b>Delivery fee:</b> R${deliveryFee}</p><p><b>Free delivery:</b> When printing cost is R${freeMin} or more</p>`;}
+ const ids={priceBw:bw,priceColour:colour,priceLamination:lamination,priceDeliveryFee:deliveryFee,priceFreeDeliveryMinimum:freeMin};
  Object.entries(ids).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
  const status=document.getElementById("printingPriceStatus");
- if(status){status.innerHTML=`<h4>Current Printing Prices</h4><p><b>Black & White:</b> R${bw} per page</p><p><b>Colour:</b> R${colour} per page</p><p><b>Delivery fee:</b> R${deliveryFee}</p><p><b>Free delivery from:</b> R${freeMin} printing cost</p>`;}
+ if(status){status.innerHTML=`<h4>Current Printing Prices</h4><p><b>Black & White:</b> R${bw} per page</p><p><b>Colour:</b> R${colour} per page</p><p><b>Lamination:</b> R${lamination} per page</p><p><b>Delivery fee:</b> R${deliveryFee}</p><p><b>Free delivery from:</b> R${freeMin} printing cost</p>`;}
 }
 
 async function saveStock(){
@@ -1283,7 +1289,7 @@ async function autoCountPages(files){
  let totalPages=0;
  try{
   for(const file of files){
-   if(file.size>maxFileSize){throw new Error(file.name+" exceeds the 10MB limit.");}
+   if(file.size>maxFileSize){throw new Error(file.name+" exceeds the 45MB limit.");}
    if(hasBlockedFileName(file)){throw new Error("This file name suggests sensitive or risky content. Please rename only if the file is legal and safe to print, or do not upload it.");}
    if(!isAllowedUpload(file)){throw new Error("Only PDF and image files are allowed, and risky file names are blocked.");}
    totalPages+=await countPagesForFile(file);
@@ -1304,6 +1310,7 @@ let selectedFileDetails=[];
 let selectedFilesStore=[];
 let selectedFileTypes={};
 let selectedFilePages={};
+let selectedFileLamination={};
 
 async function autoCountSingleFile(file){
  const ext=getUploadExtension(file);
@@ -1366,10 +1373,11 @@ async function renderFileOptions(){
   const key=fileKey(file);
 
   if(file.size>maxFileSize){
-   alert(displayFileName(file,i)+" exceeds 10MB limit.");
+   alert(displayFileName(file,i)+" exceeds 45MB limit.");
    selectedFilesStore.splice(i,1);
    delete selectedFileTypes[key];
    delete selectedFilePages[key];
+   delete selectedFileLamination[key];
    return renderFileOptions();
   }
 
@@ -1378,6 +1386,7 @@ async function renderFileOptions(){
    selectedFilesStore.splice(i,1);
    delete selectedFileTypes[key];
    delete selectedFilePages[key];
+   delete selectedFileLamination[key];
    return renderFileOptions();
   }
 
@@ -1386,6 +1395,7 @@ async function renderFileOptions(){
    selectedFilesStore.splice(i,1);
    delete selectedFileTypes[key];
    delete selectedFilePages[key];
+   delete selectedFileLamination[key];
    return renderFileOptions();
   }
 
@@ -1393,7 +1403,9 @@ async function renderFileOptions(){
    if(!selectedFilePages[key]) selectedFilePages[key]=await autoCountSingleFile(file);
    const pages=selectedFilePages[key];
    const printType=selectedFileTypes[key] || document.getElementById("printType").value;
+   const lamination=selectedFileLamination[key] || false;
    selectedFileTypes[key]=printType;
+   selectedFileLamination[key]=lamination;
    selectedFileDetails.push({
     index:i,
     key,
@@ -1401,7 +1413,8 @@ async function renderFileOptions(){
     displayName:displayFileName(file,i),
     size:formatFileSize(file.size),
     pages,
-    printType
+    printType,
+    lamination
    });
    totalPages+=pages;
   }catch(e){
@@ -1409,13 +1422,14 @@ async function renderFileOptions(){
    selectedFilesStore.splice(i,1);
    delete selectedFileTypes[key];
    delete selectedFilePages[key];
+   delete selectedFileLamination[key];
    return renderFileOptions();
   }
  }
 
  document.getElementById("pages").value=totalPages;
  box.classList.remove("hidden");
- box.innerHTML='<b>Choose print type for each file:</b>'+selectedFileDetails.map((f,i)=>`
+ box.innerHTML='<b>Choose print type and lamination for each file:</b>'+selectedFileDetails.map((f,i)=>`
   <div class="file-upload-row">
     <div class="file-upload-info">
       <span class="file-upload-name" title="${escapeHtml(f.name)}">${escapeHtml(f.displayName)}</span>
@@ -1424,11 +1438,15 @@ async function renderFileOptions(){
     <div class="file-print-actions">
       <button type="button" id="fileBw_${i}" class="btn-small" onclick="setFilePrintType(${i},'bw')">Black & White</button>
       <button type="button" id="fileColour_${i}" class="btn-small btn-green" onclick="setFilePrintType(${i},'colour')">Colour</button>
+      <button type="button" id="fileLaminate_${i}" class="file-laminate-btn" onclick="setFileLamination(${i})">📋 Lamination</button>
       <button type="button" class="btn-small btn-red" onclick="removeSelectedFile(${i})">Remove</button>
     </div>
   </div>
  `).join("");
- selectedFileDetails.forEach((f,i)=>setFilePrintType(i,f.printType,true));
+ selectedFileDetails.forEach((f,i)=>{
+  setFilePrintType(i,f.printType,true);
+  setFileLaminationUI(i,f.lamination||false,true);
+ });
  calculatePrice();
  return true;
 }
@@ -1439,6 +1457,7 @@ function removeSelectedFile(index){
   const key=fileKey(file);
   delete selectedFileTypes[key];
   delete selectedFilePages[key];
+  delete selectedFileLamination[key];
  }
  selectedFilesStore.splice(index,1);
  renderFileOptions();
@@ -1457,13 +1476,34 @@ function setFilePrintType(index,type,silent=false){
  if(!silent)calculatePrice();
 }
 
+function setFileLamination(index){
+ if(!selectedFileDetails[index])return;
+ const current=selectedFileDetails[index].lamination || false;
+ const newVal=!current;
+ selectedFileDetails[index].lamination=newVal;
+ selectedFileLamination[selectedFileDetails[index].key]=newVal;
+ setFileLaminationUI(index,newVal);
+ calculatePrice();
+}
+
+function setFileLaminationUI(index,value,silent=false){
+ const btn=document.getElementById("fileLaminate_"+index);
+ if(btn){
+  btn.classList.toggle("active-choice",value);
+  btn.textContent=value?"✅ Laminated":"📋 Lamination";
+ }
+ if(!silent)calculatePrice();
+}
+
 function getFilePrintBreakdown(){
  const files=selectedFilesStore;
  return selectedFileDetails.map((f,i)=>{
   const type=f.printType || document.getElementById("printType").value;
   const rate=type==="bw"?Number(printingPrices.bw):Number(printingPrices.colour);
-  const cost=Number(f.pages||1)*rate;
-  return {index:i,file:files[i],fileName:f.name,pages:Number(f.pages||1),printType:type,rate,cost};
+  const pages=Number(f.pages||1);
+  const cost=pages * rate;
+  const laminationCost=f.lamination ? pages * Number(printingPrices.lamination) : 0;
+  return {index:i,file:files[i],fileName:f.name,pages:pages,printType:type,rate,cost,lamination:f.lamination||false,laminationCost};
  });
 }
 
@@ -1471,9 +1511,18 @@ function calculatePrice(){
  const breakdown=getFilePrintBreakdown();
  let printCost=0;
  let totalPages=0;
+ let laminationTotal=0;
+ let laminationDetails=[];
  let rate=document.getElementById("printType").value==="bw"?Number(printingPrices.bw):Number(printingPrices.colour);
  if(breakdown.length){
-  breakdown.forEach(f=>{printCost+=f.cost;totalPages+=f.pages;});
+  breakdown.forEach(f=>{
+   printCost+=f.cost;
+   totalPages+=f.pages;
+   if(f.lamination){
+    laminationTotal+=f.laminationCost;
+    laminationDetails.push(f.fileName);
+   }
+  });
  }else{
   const pages=Math.max(1,Math.min(500,Number(document.getElementById("pages").value)||1));
   document.getElementById("pages").value=pages;
@@ -1484,10 +1533,11 @@ function calculatePrice(){
  }
  document.getElementById("pages").value=Math.max(1,totalPages);
  const deliveryFee=printCost>=Number(printingPrices.freeDeliveryMinimum)?0:Number(printingPrices.deliveryFee);
- const total=printCost+deliveryFee;
- const detail=breakdown.length?'<br><small>'+breakdown.map(f=>`${escapeHtml(f.fileName)}: ${f.pages} page(s), ${typeLabel(f.printType)}, R${f.cost}`).join("<br>")+'</small>':"";
- document.getElementById("priceBox").innerHTML=`Printing cost: R${printCost}<br>Delivery fee: ${deliveryFee===0?"FREE":"R"+deliveryFee}<br>Final total: R${total}${detail}`;
- return{printCost,deliveryFee,total,rate};
+ const total=printCost+deliveryFee+laminationTotal;
+ const detail=breakdown.length?'<br><small>'+breakdown.map(f=>`${escapeHtml(f.fileName)}: ${f.pages} page(s), ${typeLabel(f.printType)}, R${f.cost}${f.lamination?' + Lamination R'+f.laminationCost:''}`).join("<br>")+'</small>':"";
+ const laminationLine=laminationTotal>0?`<br>Lamination cost: R${laminationTotal} (${laminationDetails.length} document${laminationDetails.length>1?'s':''}, R${formatRand(printingPrices.lamination)} per page)`:"";
+ document.getElementById("priceBox").innerHTML=`Printing cost: R${printCost}${laminationLine}<br>Delivery fee: ${deliveryFee===0?"FREE":"R"+deliveryFee}<br>Final total: R${total}${detail}`;
+ return{printCost,deliveryFee,total,rate,laminationTotal,laminationDetails};
 }
 
 document.getElementById("deliveryTime").addEventListener("change",updateDeliveryTimes);
@@ -1500,7 +1550,7 @@ if(db){
   const upload=await db.storage.from(storageBucket).upload(path,item.file,{upsert:false});
   if(upload.error){alert("Could not upload "+item.fileName);return;}
   if(!filePath)filePath=path;
-  uploadedFileRows.push({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:path,pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost});
+  uploadedFileRows.push({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:path,pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost,lamination:item.lamination||false});
  }
  const proof=document.getElementById("paymentProof")?.files?.[0];
  if(document.getElementById("paymentMethod").value==="EFT"){
@@ -1511,9 +1561,9 @@ if(db){
   if(proofUpload.error){alert("Could not upload proof of payment.");return;}
  }
 }else{
- uploadedFileRows=fileBreakdown.map(item=>({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:"",pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost}));
+ uploadedFileRows=fileBreakdown.map(item=>({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:"",pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost,lamination:item.lamination||false}));
 }
-const order={orderNo,userEmail:currentUser.email,customerName:escapeHtml(document.getElementById("customerName").value.trim()),customerPhone:escapeHtml(document.getElementById("customerPhone").value.trim()),fileName:escapeHtml(combinedFileName),filePath,pages:Number(document.getElementById("pages").value),printType:fileBreakdown.length>1?"mixed":fileBreakdown[0].printType,rate:price.rate,printCost:price.printCost,deliveryArea:escapeHtml(deliveryArea),deliveryTime:escapeHtml(deliveryTime),deliveryFee:price.deliveryFee,total:price.total,notes:escapeHtml(document.getElementById("notes").value.trim()),paymentMethod:document.getElementById("paymentMethod").value,paymentStatus:document.getElementById("paymentMethod").value==="EFT"?"Pending Verification":"Pending",paymentProofPath,deliveryStatus:"Not Dispatched",stockDeducted:false,rating:0,review:"",status:"Pending",date:new Date().toLocaleString()};if(db){const {error}=await db.from("print_orders").insert(mapOrderToDb(order));if(error){console.error(error);alert("Could not submit order.");return;}const filesInsert=await db.from("print_order_files").insert(uploadedFileRows);if(filesInsert.error){alert("File details not saved.");return;}}orders.unshift(order);await saveOrders();this.reset();selectedFileDetails=[];selectedFilesStore=[];selectedFileTypes={};selectedFilePages={};document.getElementById("fileOptionsBox").classList.add("hidden");document.getElementById("fileOptionsBox").innerHTML="";document.getElementById("pages").value=1;document.getElementById("customerName").value=currentUser.name;document.getElementById("customerPhone").value=currentUser.phone||"";renderDeliveryAreas();calculatePrice();renderCustomerOrders();await logAudit(order.orderNo,"Order submitted");alert("Order submitted successfully.");});
+const order={orderNo,userEmail:currentUser.email,customerName:escapeHtml(document.getElementById("customerName").value.trim()),customerPhone:escapeHtml(document.getElementById("customerPhone").value.trim()),fileName:escapeHtml(combinedFileName),filePath,pages:Number(document.getElementById("pages").value),printType:fileBreakdown.length>1?"mixed":fileBreakdown[0].printType,rate:price.rate,printCost:price.printCost,laminationTotal:price.laminationTotal,laminationDetails:price.laminationDetails,deliveryArea:escapeHtml(deliveryArea),deliveryTime:escapeHtml(deliveryTime),deliveryFee:price.deliveryFee,total:price.total,notes:escapeHtml(document.getElementById("notes").value.trim()),paymentMethod:document.getElementById("paymentMethod").value,paymentStatus:document.getElementById("paymentMethod").value==="EFT"?"Pending Verification":"Pending",paymentProofPath,deliveryStatus:"Not Dispatched",stockDeducted:false,rating:0,review:"",status:"Pending",date:new Date().toLocaleString()};if(db){const {error}=await db.from("print_orders").insert(mapOrderToDb(order));if(error){console.error(error);alert("Could not submit order.");return;}const filesInsert=await db.from("print_order_files").insert(uploadedFileRows);if(filesInsert.error){alert("File details not saved.");return;}}orders.unshift(order);await saveOrders();this.reset();selectedFileDetails=[];selectedFilesStore=[];selectedFileTypes={};selectedFilePages={};selectedFileLamination={};document.getElementById("fileOptionsBox").classList.add("hidden");document.getElementById("fileOptionsBox").innerHTML="";document.getElementById("pages").value=1;document.getElementById("customerName").value=currentUser.name;document.getElementById("customerPhone").value=currentUser.phone||"";renderDeliveryAreas();calculatePrice();renderCustomerOrders();await logAudit(order.orderNo,"Order submitted");alert("Order submitted successfully.");});
 function renderDeliveryAreas(){const customerSelect=document.getElementById("deliveryArea");customerSelect.innerHTML='<option value="">Choose delivery area</option>';deliveryAreas.forEach(area=>{customerSelect.innerHTML+=`<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`;});const list=document.getElementById("deliveryAreaList");if(!list)return;list.innerHTML="";deliveryAreas.forEach(area=>{const safe=escapeHtml(area);list.innerHTML+=`<div class="area-row"><strong>${safe}</strong><button class="btn-small btn-red" onclick="removeDeliveryArea('${safe.replace(/'/g,"\\'")}')">Remove</button></div>`;});}
 async function addDeliveryArea(){if(!currentUser||currentUser.role!=="admin")return;const input=document.getElementById("newDeliveryArea");const area=input.value.trim();if(!area){alert("Please enter a delivery place.");return;}if(deliveryAreas.map(a=>a.toLowerCase()).includes(area.toLowerCase())){alert("This delivery place already exists.");return;}if(db){const {error}=await db.from("delivery_areas").insert({name:area});if(error){alert("Could not add delivery place.");return;}}deliveryAreas.push(area);await saveDeliveryAreas();input.value="";renderDeliveryAreas();}
 async function removeDeliveryArea(area){if(!currentUser||currentUser.role!=="admin")return;if(!confirm("Remove "+area+" from delivery places?"))return;if(db)await db.from("delivery_areas").delete().eq("name",area);deliveryAreas=deliveryAreas.filter(a=>a!==area);await saveDeliveryAreas();renderDeliveryAreas();}
@@ -1522,17 +1572,19 @@ function statusClass(v){return String(v||"").replace(/\s+/g,"");}
 function renderCustomerOrders(){
 const tbody=document.getElementById("customerOrders");
 const myOrders=orders.filter(o=>o.userEmail===currentUser.email);
-tbody.innerHTML=myOrders.length?"":'<tr><td colspan="10">No orders yet.</td></tr>';
+tbody.innerHTML=myOrders.length?"":'<tr><td colspan="11">No orders yet.</td></tr>';
 myOrders.forEach(order=>{
 const deliveryStatus=order.deliveryStatus||"Not Dispatched";
 const deliveryStatusText=deliveryStatus==="Delivered"?"🟢 Delivered":deliveryStatus==="Out for Delivery"?"🟣 Out for Delivery":"🟠 "+deliveryStatus;
 const reviewBtn=(order.status==="Delivered"||order.status==="Ready")?`<button class="btn-small btn-purple" onclick="rateOrder('${order.orderNo}')">Review</button>`:"";
 const cancelBtn=order.status==="Pending"?`<button class="btn-small btn-red" onclick="cancelMyPendingOrder('${order.orderNo}')">Cancel Order</button>`:"";
+const laminationText=order.laminationTotal&&order.laminationTotal>0?`✅ R${order.laminationTotal}`:"❌ No";
 tbody.innerHTML+=`<tr>
 <td>${order.orderNo}</td>
 <td>${buildOrderFilesHtml(order)}</td>
 <td>${order.pages}</td>
 <td>${typeLabel(order.printType)}</td>
+<td>${laminationText}</td>
 <td>${order.deliveryArea}<br>${order.deliveryTime}</td>
 <td>${order.paymentMethod||"Cash"}<br>${order.paymentStatus||"Pending"}</td>
 <td>${deliveryStatusText}</td>
@@ -1655,11 +1707,12 @@ const q=(document.getElementById("adminSearch")?.value||"").toLowerCase();
 const sf=document.getElementById("statusFilter")?.value||"";
 if(q){visibleOrders=visibleOrders.filter(o=>[o.orderNo,o.customerName,o.customerPhone,o.fileName,o.deliveryArea,o.userEmail].join(" ").toLowerCase().includes(q));}
 if(sf){visibleOrders=visibleOrders.filter(o=>o.status===sf);}
-tbody.innerHTML=visibleOrders.length?"":'<tr><td colspan="12">No orders found.</td></tr>';
+tbody.innerHTML=visibleOrders.length?"":'<tr><td colspan="13">No orders found.</td></tr>';
 let totalMoney=0,pending=0;
 orders.forEach(order=>{totalMoney+=Number(order.total);if(order.status==="Pending")pending++;});
 visibleOrders.forEach(order=>{
-tbody.innerHTML+=`<tr><td>${order.orderNo}</td><td>${order.customerName}</td><td>${order.customerPhone}</td><td>${buildOrderFilesHtml(order)}</td><td>${order.pages}</td><td>${typeLabel(order.printType)}</td><td>${order.deliveryArea}<br>${order.deliveryTime}<br>${deliveryBadgeHtml(order)}<br>Fee: ${Number(order.deliveryFee)===0?"FREE":"R"+order.deliveryFee}</td><td>${order.paymentMethod||"Cash"}<br><b>${order.paymentStatus||"Pending"}</b>${order.paymentProofPath?`<br><button class="btn-small" onclick="downloadPaymentProof('${order.orderNo}')">Payment Proof</button>`:""}<br>${paymentActionButtons(order)}</td><td>${order.deliveryStatus||"Not Dispatched"}<br><button class="btn-small" onclick="changeDeliveryStatus('${order.orderNo}','Out for Delivery')">Out</button><button class="btn-small btn-green" onclick="changeDeliveryStatus('${order.orderNo}','Delivered')">Done</button></td><td>R${order.total}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span>${order.rating?`<br>⭐ ${order.rating}/5`:""}</td><td><div class="admin-action-menu" id="adminMenu_${order.orderNo}">
+const laminationText=order.laminationTotal&&order.laminationTotal>0?`✅ R${order.laminationTotal}`:"❌ No";
+tbody.innerHTML+=`<tr><td>${order.orderNo}</td><td>${order.customerName}</td><td>${order.customerPhone}</td><td>${buildOrderFilesHtml(order)}</td><td>${order.pages}</td><td>${typeLabel(order.printType)}</td><td>${laminationText}</td><td>${order.deliveryArea}<br>${order.deliveryTime}<br>${deliveryBadgeHtml(order)}<br>Fee: ${Number(order.deliveryFee)===0?"FREE":"R"+order.deliveryFee}</td><td>${order.paymentMethod||"Cash"}<br><b>${order.paymentStatus||"Pending"}</b>${order.paymentProofPath?`<br><button class="btn-small" onclick="downloadPaymentProof('${order.orderNo}')">Payment Proof</button>`:""}<br>${paymentActionButtons(order)}</td><td>${order.deliveryStatus||"Not Dispatched"}<br><button class="btn-small" onclick="changeDeliveryStatus('${order.orderNo}','Out for Delivery')">Out</button><button class="btn-small btn-green" onclick="changeDeliveryStatus('${order.orderNo}','Delivered')">Done</button></td><td>R${order.total}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span>${order.rating?`<br>⭐ ${order.rating}/5`:""}</td><td><div class="admin-action-menu" id="adminMenu_${order.orderNo}">
 <button type="button" class="btn-small admin-action-btn" onclick="event.stopPropagation();toggleAdminMenu('adminMenu_${order.orderNo}')">Actions ▼</button>
 <div class="admin-action-dropdown">
 <button type="button" onclick="changeStatus('${order.orderNo}','Printing')">Mark Printing</button>
@@ -1750,7 +1803,7 @@ return true;
 }
 async function changeStatus(orderNo,status){if(!currentUser||currentUser.role!=="admin")return;const order=orders.find(o=>o.orderNo===orderNo);if(!order)return;if(status==="Cancelled"){if(!confirm("Cancel this order?"))return;order.status="Cancelled";}else{if(order.status==="Cancelled"&&!confirm("This order is cancelled. Re-open/change it?"))return;if(status==="Printing"){const ok=await deductStockForPrinting(order);if(!ok)return;}order.status=status;}if(status==="Delivered"){order.deliveryStatus="Delivered";}if(db){const {error}=await db.from("print_orders").update({status:order.status,delivery_status:order.deliveryStatus,stock_deducted:order.stockDeducted||false}).eq("order_no",orderNo);if(error){alert("Could not update order.");return;}}await saveOrders();await logAudit(orderNo,"Status changed to "+order.status);notifyCustomerStatus(order);renderAdminOrders();}
 function orderMessage(order){
-return `New LiTaLink Order%0AOrder: ${order.orderNo}%0ACustomer: ${order.customerName}%0APhone: ${order.customerPhone}%0AFile: ${order.fileName}%0APages: ${order.pages}%0AType: ${typeLabel(order.printType)}%0ADelivery: ${order.deliveryArea} at ${order.deliveryTime}%0APayment: ${order.paymentMethod||"Cash"}%0ATotal: R${order.total}`;
+return `New LiTaLink Order%0AOrder: ${order.orderNo}%0ACustomer: ${order.customerName}%0APhone: ${order.customerPhone}%0AFile: ${order.fileName}%0APages: ${order.pages}%0AType: ${typeLabel(order.printType)}%0ALamination: ${order.laminationTotal&&order.laminationTotal>0?"Yes (+R"+order.laminationTotal+")":"No"}%0ADelivery: ${order.deliveryArea} at ${order.deliveryTime}%0APayment: ${order.paymentMethod||"Cash"}%0ATotal: R${order.total}`;
 }
 function notifyAdminWhatsApp(order){
  if(!currentUser||currentUser.role!=="admin")return;
@@ -1790,7 +1843,8 @@ async function previewOrderFile(orderNo){
    fileName:f.file_name||"order-file",
    filePath:f.file_path||"",
    pages:f.pages||"",
-   printType:f.print_type||""
+   printType:f.print_type||"",
+   lamination:f.lamination||false
   }));
  }else{
   const order=orders.find(o=>o.orderNo===orderNo);
@@ -1799,7 +1853,8 @@ async function previewOrderFile(orderNo){
     fileName:order.fileName||("order-file-"+orderNo),
     filePath:order.filePath,
     pages:order.pages||"",
-    printType:order.printType||""
+    printType:order.printType||"",
+    lamination:false
    }];
   }
  }
@@ -1820,7 +1875,8 @@ async function previewOrderFile(orderNo){
   const safeName=String(item.fileName||("File "+(i+1))).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   const details=[
    item.pages?item.pages+" page(s)":"",
-   item.printType?typeLabel(item.printType):""
+   item.printType?typeLabel(item.printType):"",
+   item.lamination?"✅ Laminated":""
   ].filter(Boolean).join(" • ");
 
   list.innerHTML+=`
@@ -1886,8 +1942,8 @@ function toggleAdminMenu(id){
  if(el) el.classList.toggle("open");
 }
 function exportOrdersCSV(){
-const headers=["Order No","Customer","Phone","Email","Files","Pages","Type","Delivery Area","Delivery Time","Payment Method","Payment Status","Total","Status","Date"];
-const rows=orders.map(o=>[o.orderNo,o.customerName,o.customerPhone,o.userEmail,o.fileName,o.pages,typeLabel(o.printType),o.deliveryArea,o.deliveryTime,o.paymentMethod||"Cash",o.paymentStatus||"Pending",o.total,o.status,o.date]);
+const headers=["Order No","Customer","Phone","Email","Files","Pages","Type","Lamination","Delivery Area","Delivery Time","Payment Method","Payment Status","Total","Status","Date"];
+const rows=orders.map(o=>[o.orderNo,o.customerName,o.customerPhone,o.userEmail,o.fileName,o.pages,typeLabel(o.printType),o.laminationTotal&&o.laminationTotal>0?"Yes (R"+o.laminationTotal+")":"No",o.deliveryArea,o.deliveryTime,o.paymentMethod||"Cash",o.paymentStatus||"Pending",o.total,o.status,o.date]);
 const csv=[headers,...rows].map(row=>row.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
 const blob=new Blob([csv],{type:"text/csv"});
 const url=URL.createObjectURL(blob);
@@ -1931,7 +1987,8 @@ async function downloadOrderFile(orderNo){
    fileName:f.file_name||"order-file",
    filePath:f.file_path||"",
    pages:f.pages||"",
-   printType:f.print_type||""
+   printType:f.print_type||"",
+   lamination:f.lamination||false
   }));
  }else{
   const order=orders.find(o=>o.orderNo===orderNo);
@@ -1940,7 +1997,8 @@ async function downloadOrderFile(orderNo){
     fileName:order.fileName||("order-file-"+orderNo),
     filePath:order.filePath,
     pages:order.pages||"",
-    printType:order.printType||""
+    printType:order.printType||"",
+    lamination:false
    }];
   }
  }
@@ -2064,6 +2122,7 @@ function buildInvoice(order){
  const safeNotes=escapeHtml(order.notes||"No remarks");
  const total=Number(order.total||0).toFixed(2);
  const deliveryFee=Number(order.deliveryFee||0)===0 ? "FREE" : "R"+Number(order.deliveryFee||0).toFixed(2);
+ const laminationText=order.laminationTotal&&order.laminationTotal>0 ? "Yes (R"+order.laminationTotal+", R"+formatRand(printingPrices.lamination)+" per page)" : "No";
  const barcode=`<svg class="real-invoice-barcode" data-order="${safeOrder}" style="width:100%;max-width:360px;height:105px"></svg>`;
  return `
  <div style="font-family:Arial,sans-serif;background:#b7bbc5;padding:30px;color:#111">
@@ -2094,6 +2153,7 @@ function buildInvoice(order){
       <b>SHIP DATE :</b><div>${safeDate}</div>
       <b>PRINT TYPE :</b><div>${safeType}</div>
       <b>PAGES :</b><div>${safePages}</div>
+      <b>LAMINATION :</b><div>${laminationText}</div>
       <b>DELIVERY :</b><div>${safeArea} • ${safeTime}</div>
       <b>DELIVERY FEE :</b><div>${deliveryFee}</div>
       <b>PAYMENT :</b><div>${safePayment} • ${safePaymentStatus}</div>
@@ -2174,6 +2234,7 @@ function buildDeliveryLabel(order){
  const safeDelivery=escapeHtml(order.deliveryStatus||"Not Dispatched");
  const safePayment=escapeHtml(order.paymentMethod||"");
  const safeTotal=Number(order.total||0).toFixed(2);
+ const laminationText=order.laminationTotal&&order.laminationTotal>0 ? "Yes (R"+order.laminationTotal+")" : "No";
  return `
   <div class="delivery-label-page">
    <div class="delivery-label">
@@ -2196,6 +2257,7 @@ function buildDeliveryLabel(order){
      <p><b>Delivery:</b><br>${safeDelivery}</p>
      <p><b>Payment:</b><br>${safePayment}</p>
      <p><b>Total:</b><br>R${safeTotal}</p>
+     <p><b>Lamination:</b><br>${laminationText}</p>
     </div>
     <svg class="real-label-barcode" data-order="${safeOrder}"></svg>
    </div>
