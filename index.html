@@ -202,7 +202,10 @@
       <label>Default Print Type</label><select id="printType" onchange="calculatePrice()"><option value="bw">Black & White</option><option value="colour">Colour</option></select>
       <label>Delivery Area</label><select id="deliveryArea" required></select>
       <label>Delivery Time</label><select id="deliveryTime" required><option value="">Choose delivery time</option><option value="07:00">07:00</option><option value="12:00">12:00</option><option value="17:00">17:00</option><option value="23:00">23:00</option></select>
-      <label>Payment Method</label><select id="paymentMethod" required onchange="togglePaymentProof()"><option value="Cash">Cash</option><option value="EFT">EFT</option><option value="Pay on Delivery">Pay on Delivery</option><option value="Card Machine">Card Machine</option></select>
+      <label>Payment Method</label>
+      <div style="padding:11px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:15px;margin-top:7px">
+        <strong>Pay on Delivery</strong> <span style="color:#6b7280;font-size:13px">(EFT/Transfer or Cash)</span>
+      </div>
       <div id="paymentProofBox" class="hidden"><label>Upload Proof of Payment</label><input type="file" id="paymentProof" accept=".pdf,.jpg,.jpeg,.png" /></div>
       <label>Extra Notes</label><textarea id="notes" rows="3"></textarea>
       <div class="price-box" id="priceBox"></div>
@@ -1542,28 +1545,57 @@ function calculatePrice(){
 
 document.getElementById("deliveryTime").addEventListener("change",updateDeliveryTimes);
 const fileInput=document.getElementById("documentFile");fileInput.addEventListener("change",renderFileOptions);document.getElementById("printType").addEventListener("change",function(){selectedFileDetails.forEach((f,i)=>setFilePrintType(i,document.getElementById("printType").value,true));calculatePrice();});
-document.getElementById("orderForm").addEventListener("submit",async function(e){e.preventDefault();const files=selectedFilesStore;if(!files||!files.length){alert("Please select one or more files.");return;}if(!currentUser||currentUser.role!=="customer"){alert("Only customers can submit orders.");return;}if(!selectedFileDetails.length||selectedFileDetails.length!==files.length){if(!(await renderFileOptions())){return;}}const fileBreakdown=getFilePrintBreakdown();const deliveryArea=document.getElementById("deliveryArea").value,deliveryTime=document.getElementById("deliveryTime").value;if(!deliveryArea||!deliveryTime){alert("Choose delivery area and time.");return;}updateDeliveryTimes();if(!document.getElementById("deliveryTime").value){return;}if(!validateCustomerContact()){return;}if(!validateEftBeforeUpload()){return;}const price=calculatePrice();const orderNo="ORD-"+crypto.randomUUID().slice(0,8).toUpperCase();let filePath="",paymentProofPath="";let uploadedFileRows=[];const combinedFileName=fileBreakdown.map(f=>f.fileName).join(", ");
-if(db){
- for(const item of fileBreakdown){
-  const safeName=item.fileName.replace(/[^a-zA-Z0-9.\-_]/g,"_");
-  const path=`${currentUser.email}/${orderNo}-${Date.now()}-${item.index}-${safeName}`;
-  const upload=await db.storage.from(storageBucket).upload(path,item.file,{upsert:false});
-  if(upload.error){alert("Could not upload "+item.fileName);return;}
-  if(!filePath)filePath=path;
-  uploadedFileRows.push({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:path,pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost,lamination:item.lamination||false});
+document.getElementById("orderForm").addEventListener("submit",async function(e){
+ e.preventDefault();
+ const files=selectedFilesStore;
+ if(!files||!files.length){alert("Please select one or more files.");return;}
+ if(!currentUser||currentUser.role!=="customer"){alert("Only customers can submit orders.");return;}
+ if(!selectedFileDetails.length||selectedFileDetails.length!==files.length){if(!(await renderFileOptions())){return;}}
+ const fileBreakdown=getFilePrintBreakdown();
+ const deliveryArea=document.getElementById("deliveryArea").value,deliveryTime=document.getElementById("deliveryTime").value;
+ if(!deliveryArea||!deliveryTime){alert("Choose delivery area and time.");return;}
+ updateDeliveryTimes();
+ if(!document.getElementById("deliveryTime").value){return;}
+ if(!validateCustomerContact()){return;}
+ // Payment is Pay on Delivery only - no proof needed
+ const price=calculatePrice();
+ const orderNo="ORD-"+crypto.randomUUID().slice(0,8).toUpperCase();
+ let filePath="";
+ let uploadedFileRows=[];
+ const combinedFileName=fileBreakdown.map(f=>f.fileName).join(", ");
+ if(db){
+  for(const item of fileBreakdown){
+   const safeName=item.fileName.replace(/[^a-zA-Z0-9.\-_]/g,"_");
+   const path=`${currentUser.email}/${orderNo}-${Date.now()}-${item.index}-${safeName}`;
+   const upload=await db.storage.from(storageBucket).upload(path,item.file,{upsert:false});
+   if(upload.error){alert("Could not upload "+item.fileName);return;}
+   if(!filePath)filePath=path;
+   uploadedFileRows.push({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:path,pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost,lamination:item.lamination||false});
+  }
+ }else{
+  uploadedFileRows=fileBreakdown.map(item=>({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:"",pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost,lamination:item.lamination||false}));
  }
- const proof=document.getElementById("paymentProof")?.files?.[0];
- if(document.getElementById("paymentMethod").value==="EFT"){
-  if(!proof){alert("Please upload proof of payment for EFT.");return;}
-  if(!validateProofFile(proof)){alert("Proof of payment must be a PDF, JPG or PNG file and 5MB or smaller.");return;}
-  paymentProofPath=`${currentUser.email}/${orderNo}-proof-${Date.now()}-${proof.name.replace(/[^a-zA-Z0-9.\-_]/g,"_")}`;
-  const proofUpload=await db.storage.from(paymentProofBucket).upload(paymentProofPath,proof,{upsert:false});
-  if(proofUpload.error){alert("Could not upload proof of payment.");return;}
- }
-}else{
- uploadedFileRows=fileBreakdown.map(item=>({order_no:orderNo,user_email:currentUser.email,file_name:item.fileName,file_path:"",pages:item.pages,print_type:item.printType,rate:item.rate,print_cost:item.cost,lamination:item.lamination||false}));
-}
-const order={orderNo,userEmail:currentUser.email,customerName:escapeHtml(document.getElementById("customerName").value.trim()),customerPhone:escapeHtml(document.getElementById("customerPhone").value.trim()),fileName:escapeHtml(combinedFileName),filePath,pages:Number(document.getElementById("pages").value),printType:fileBreakdown.length>1?"mixed":fileBreakdown[0].printType,rate:price.rate,printCost:price.printCost,laminationTotal:price.laminationTotal,laminationDetails:price.laminationDetails,deliveryArea:escapeHtml(deliveryArea),deliveryTime:escapeHtml(deliveryTime),deliveryFee:price.deliveryFee,total:price.total,notes:escapeHtml(document.getElementById("notes").value.trim()),paymentMethod:document.getElementById("paymentMethod").value,paymentStatus:document.getElementById("paymentMethod").value==="EFT"?"Pending Verification":"Pending",paymentProofPath,deliveryStatus:"Not Dispatched",stockDeducted:false,rating:0,review:"",status:"Pending",date:new Date().toLocaleString()};if(db){const {error}=await db.from("print_orders").insert(mapOrderToDb(order));if(error){console.error(error);alert("Could not submit order.");return;}const filesInsert=await db.from("print_order_files").insert(uploadedFileRows);if(filesInsert.error){alert("File details not saved.");return;}}orders.unshift(order);await saveOrders();this.reset();selectedFileDetails=[];selectedFilesStore=[];selectedFileTypes={};selectedFilePages={};selectedFileLamination={};document.getElementById("fileOptionsBox").classList.add("hidden");document.getElementById("fileOptionsBox").innerHTML="";document.getElementById("pages").value=1;document.getElementById("customerName").value=currentUser.name;document.getElementById("customerPhone").value=currentUser.phone||"";renderDeliveryAreas();calculatePrice();renderCustomerOrders();await logAudit(order.orderNo,"Order submitted");alert("Order submitted successfully.");});
+ const order={orderNo,userEmail:currentUser.email,customerName:escapeHtml(document.getElementById("customerName").value.trim()),customerPhone:escapeHtml(document.getElementById("customerPhone").value.trim()),fileName:escapeHtml(combinedFileName),filePath,pages:Number(document.getElementById("pages").value),printType:fileBreakdown.length>1?"mixed":fileBreakdown[0].printType,rate:price.rate,printCost:price.printCost,laminationTotal:price.laminationTotal,laminationDetails:price.laminationDetails,deliveryArea:escapeHtml(deliveryArea),deliveryTime:escapeHtml(deliveryTime),deliveryFee:price.deliveryFee,total:price.total,notes:escapeHtml(document.getElementById("notes").value.trim()),paymentMethod:"Pay on Delivery (EFT/Transfer or Cash)",paymentStatus:"Pending",paymentProofPath:"",deliveryStatus:"Not Dispatched",stockDeducted:false,rating:0,review:"",status:"Pending",date:new Date().toLocaleString()};
+ if(db){const {error}=await db.from("print_orders").insert(mapOrderToDb(order));if(error){console.error(error);alert("Could not submit order.");return;}const filesInsert=await db.from("print_order_files").insert(uploadedFileRows);if(filesInsert.error){alert("File details not saved.");return;}}
+ orders.unshift(order);
+ await saveOrders();
+ this.reset();
+ selectedFileDetails=[];
+ selectedFilesStore=[];
+ selectedFileTypes={};
+ selectedFilePages={};
+ selectedFileLamination={};
+ document.getElementById("fileOptionsBox").classList.add("hidden");
+ document.getElementById("fileOptionsBox").innerHTML="";
+ document.getElementById("pages").value=1;
+ document.getElementById("customerName").value=currentUser.name;
+ document.getElementById("customerPhone").value=currentUser.phone||"";
+ renderDeliveryAreas();
+ calculatePrice();
+ renderCustomerOrders();
+ await logAudit(order.orderNo,"Order submitted");
+ alert("Order submitted successfully.");
+});
 function renderDeliveryAreas(){const customerSelect=document.getElementById("deliveryArea");customerSelect.innerHTML='<option value="">Choose delivery area</option>';deliveryAreas.forEach(area=>{customerSelect.innerHTML+=`<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`;});const list=document.getElementById("deliveryAreaList");if(!list)return;list.innerHTML="";deliveryAreas.forEach(area=>{const safe=escapeHtml(area);list.innerHTML+=`<div class="area-row"><strong>${safe}</strong><button class="btn-small btn-red" onclick="removeDeliveryArea('${safe.replace(/'/g,"\\'")}')">Remove</button></div>`;});}
 async function addDeliveryArea(){if(!currentUser||currentUser.role!=="admin")return;const input=document.getElementById("newDeliveryArea");const area=input.value.trim();if(!area){alert("Please enter a delivery place.");return;}if(deliveryAreas.map(a=>a.toLowerCase()).includes(area.toLowerCase())){alert("This delivery place already exists.");return;}if(db){const {error}=await db.from("delivery_areas").insert({name:area});if(error){alert("Could not add delivery place.");return;}}deliveryAreas.push(area);await saveDeliveryAreas();input.value="";renderDeliveryAreas();}
 async function removeDeliveryArea(area){if(!currentUser||currentUser.role!=="admin")return;if(!confirm("Remove "+area+" from delivery places?"))return;if(db)await db.from("delivery_areas").delete().eq("name",area);deliveryAreas=deliveryAreas.filter(a=>a!==area);await saveDeliveryAreas();renderDeliveryAreas();}
@@ -1586,7 +1618,7 @@ tbody.innerHTML+=`<tr>
 <td>${typeLabel(order.printType)}</td>
 <td>${laminationText}</td>
 <td>${order.deliveryArea}<br>${order.deliveryTime}</td>
-<td>${order.paymentMethod||"Cash"}<br>${order.paymentStatus||"Pending"}</td>
+<td>${order.paymentMethod||"Pay on Delivery"}</td>
 <td>${deliveryStatusText}</td>
 <td>R${order.total}</td>
 <td><span class="status ${statusClass(order.status)}">${order.status}</span></td>
@@ -1712,7 +1744,7 @@ let totalMoney=0,pending=0;
 orders.forEach(order=>{totalMoney+=Number(order.total);if(order.status==="Pending")pending++;});
 visibleOrders.forEach(order=>{
 const laminationText=order.laminationTotal&&order.laminationTotal>0?`✅ R${order.laminationTotal}`:"❌ No";
-tbody.innerHTML+=`<tr><td>${order.orderNo}</td><td>${order.customerName}</td><td>${order.customerPhone}</td><td>${buildOrderFilesHtml(order)}</td><td>${order.pages}</td><td>${typeLabel(order.printType)}</td><td>${laminationText}</td><td>${order.deliveryArea}<br>${order.deliveryTime}<br>${deliveryBadgeHtml(order)}<br>Fee: ${Number(order.deliveryFee)===0?"FREE":"R"+order.deliveryFee}</td><td>${order.paymentMethod||"Cash"}<br><b>${order.paymentStatus||"Pending"}</b>${order.paymentProofPath?`<br><button class="btn-small" onclick="downloadPaymentProof('${order.orderNo}')">Payment Proof</button>`:""}<br>${paymentActionButtons(order)}</td><td>${order.deliveryStatus||"Not Dispatched"}<br><button class="btn-small" onclick="changeDeliveryStatus('${order.orderNo}','Out for Delivery')">Out</button><button class="btn-small btn-green" onclick="changeDeliveryStatus('${order.orderNo}','Delivered')">Done</button></td><td>R${order.total}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span>${order.rating?`<br>⭐ ${order.rating}/5`:""}</td><td><div class="admin-action-menu" id="adminMenu_${order.orderNo}">
+tbody.innerHTML+=`<tr><td>${order.orderNo}</td><td>${order.customerName}</td><td>${order.customerPhone}</td><td>${buildOrderFilesHtml(order)}</td><td>${order.pages}</td><td>${typeLabel(order.printType)}</td><td>${laminationText}</td><td>${order.deliveryArea}<br>${order.deliveryTime}<br>${deliveryBadgeHtml(order)}<br>Fee: ${Number(order.deliveryFee)===0?"FREE":"R"+order.deliveryFee}</td><td>${order.paymentMethod||"Pay on Delivery"}<br><b>${order.paymentStatus||"Pending"}</b></td><td>${order.deliveryStatus||"Not Dispatched"}<br><button class="btn-small" onclick="changeDeliveryStatus('${order.orderNo}','Out for Delivery')">Out</button><button class="btn-small btn-green" onclick="changeDeliveryStatus('${order.orderNo}','Delivered')">Done</button></td><td>R${order.total}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span>${order.rating?`<br>⭐ ${order.rating}/5`:""}</td><td><div class="admin-action-menu" id="adminMenu_${order.orderNo}">
 <button type="button" class="btn-small admin-action-btn" onclick="event.stopPropagation();toggleAdminMenu('adminMenu_${order.orderNo}')">Actions ▼</button>
 <div class="admin-action-dropdown">
 <button type="button" onclick="changeStatus('${order.orderNo}','Printing')">Mark Printing</button>
@@ -1731,55 +1763,17 @@ renderAnalytics();renderDeliveryQueue();renderPendingInvoiceZipCards();renderSto
 }
 
 function paymentActionButtons(order){
- if(!currentUser||currentUser.role!=="admin")return "";
- const status=String(order.paymentStatus||"Pending");
- const paid=status==="Verified"||status==="Paid";
- if(paid)return '<span class="delivery-badge">Payment verified</span>';
- let html='';
- html+=`<button type="button" class="btn-small btn-green" onclick="confirmPayment('${order.orderNo}')">Confirm Payment</button>`;
- if(order.paymentMethod==="EFT"){
-  html+=`<button type="button" class="btn-small btn-red" onclick="rejectPayment('${order.orderNo}')">Reject Proof</button>`;
- }
- return html;
+ // No payment actions needed since only Pay on Delivery
+ return '<span class="delivery-badge">Pay on Delivery</span>';
 }
 async function confirmPayment(orderNo){
- if(!currentUser||currentUser.role!=="admin")return;
- const order=orders.find(o=>o.orderNo===orderNo);
- if(!order)return;
- if(order.paymentMethod==="EFT"&&!order.paymentProofPath){
-  alert("This EFT order has no uploaded proof of payment.");
-  return;
- }
- if(order.paymentMethod==="EFT"&&!confirm("Confirm payment only after checking the bank account/proof of payment. Continue?"))return;
- order.paymentStatus="Verified";
- if(db){
-  const {error}=await db.from("print_orders").update({payment_status:"Verified"}).eq("order_no",orderNo);
-  if(error){alert("Could not confirm payment.");return;}
- }
- await saveOrders();
- await logAudit(orderNo,"Payment confirmed by admin");
- renderAdminOrders();
- renderCustomerOrders();
- alert("Payment confirmed for "+orderNo+".");
+ // Disabled - only Pay on Delivery
+ alert("Pay on Delivery orders don't require payment confirmation.");
 }
 async function rejectPayment(orderNo){
- if(!currentUser||currentUser.role!=="admin")return;
- const order=orders.find(o=>o.orderNo===orderNo);
- if(!order)return;
- const reason=prompt("Reason for rejecting payment proof:","Proof not matching bank payment");
- if(reason===null)return;
- order.paymentStatus="Rejected";
- if(db){
-  const {error}=await db.from("print_orders").update({payment_status:"Rejected"}).eq("order_no",orderNo);
-  if(error){alert("Could not reject payment proof.");return;}
- }
- await saveOrders();
- await logAudit(orderNo,"Payment proof rejected: "+reason);
- renderAdminOrders();
- renderCustomerOrders();
- alert("Payment proof rejected for "+orderNo+".");
+ // Disabled - only Pay on Delivery
+ alert("Pay on Delivery orders don't require payment confirmation.");
 }
-
 async function deductStockForPrinting(order){
 if(!order||order.stockDeducted)return true;
 const pages=Number(order.pages)||0;
@@ -1803,7 +1797,7 @@ return true;
 }
 async function changeStatus(orderNo,status){if(!currentUser||currentUser.role!=="admin")return;const order=orders.find(o=>o.orderNo===orderNo);if(!order)return;if(status==="Cancelled"){if(!confirm("Cancel this order?"))return;order.status="Cancelled";}else{if(order.status==="Cancelled"&&!confirm("This order is cancelled. Re-open/change it?"))return;if(status==="Printing"){const ok=await deductStockForPrinting(order);if(!ok)return;}order.status=status;}if(status==="Delivered"){order.deliveryStatus="Delivered";}if(db){const {error}=await db.from("print_orders").update({status:order.status,delivery_status:order.deliveryStatus,stock_deducted:order.stockDeducted||false}).eq("order_no",orderNo);if(error){alert("Could not update order.");return;}}await saveOrders();await logAudit(orderNo,"Status changed to "+order.status);notifyCustomerStatus(order);renderAdminOrders();}
 function orderMessage(order){
-return `New LiTaLink Order%0AOrder: ${order.orderNo}%0ACustomer: ${order.customerName}%0APhone: ${order.customerPhone}%0AFile: ${order.fileName}%0APages: ${order.pages}%0AType: ${typeLabel(order.printType)}%0ALamination: ${order.laminationTotal&&order.laminationTotal>0?"Yes (+R"+order.laminationTotal+")":"No"}%0ADelivery: ${order.deliveryArea} at ${order.deliveryTime}%0APayment: ${order.paymentMethod||"Cash"}%0ATotal: R${order.total}`;
+return `New LiTaLink Order%0AOrder: ${order.orderNo}%0ACustomer: ${order.customerName}%0APhone: ${order.customerPhone}%0AFile: ${order.fileName}%0APages: ${order.pages}%0AType: ${typeLabel(order.printType)}%0ALamination: ${order.laminationTotal&&order.laminationTotal>0?"Yes (+R"+order.laminationTotal+")":"No"}%0ADelivery: ${order.deliveryArea} at ${order.deliveryTime}%0APayment: ${order.paymentMethod||"Pay on Delivery"}%0ATotal: R${order.total}`;
 }
 function notifyAdminWhatsApp(order){
  if(!currentUser||currentUser.role!=="admin")return;
@@ -1943,7 +1937,7 @@ function toggleAdminMenu(id){
 }
 function exportOrdersCSV(){
 const headers=["Order No","Customer","Phone","Email","Files","Pages","Type","Lamination","Delivery Area","Delivery Time","Payment Method","Payment Status","Total","Status","Date"];
-const rows=orders.map(o=>[o.orderNo,o.customerName,o.customerPhone,o.userEmail,o.fileName,o.pages,typeLabel(o.printType),o.laminationTotal&&o.laminationTotal>0?"Yes (R"+o.laminationTotal+")":"No",o.deliveryArea,o.deliveryTime,o.paymentMethod||"Cash",o.paymentStatus||"Pending",o.total,o.status,o.date]);
+const rows=orders.map(o=>[o.orderNo,o.customerName,o.customerPhone,o.userEmail,o.fileName,o.pages,typeLabel(o.printType),o.laminationTotal&&o.laminationTotal>0?"Yes (R"+o.laminationTotal+")":"No",o.deliveryArea,o.deliveryTime,o.paymentMethod||"Pay on Delivery",o.paymentStatus||"Pending",o.total,o.status,o.date]);
 const csv=[headers,...rows].map(row=>row.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
 const blob=new Blob([csv],{type:"text/csv"});
 const url=URL.createObjectURL(blob);
@@ -2057,12 +2051,7 @@ if(db){const {error}=await db.from("print_orders").update({delivery_status:order
 await saveOrders();await logAudit(orderNo,"Delivery changed to "+deliveryStatus);notifyCustomerStatus(order);renderAdminOrders();
 }
 async function downloadPaymentProof(orderNo){
-const order=orders.find(o=>o.orderNo===orderNo);
-if(!order||!order.paymentProofPath){alert("No payment proof found.");return;}
-if(!requireSupabase())return;
-const {data,error}=await db.storage.from(paymentProofBucket).download(order.paymentProofPath);
-if(error){alert("Could not download payment proof.");return;}
-const url=URL.createObjectURL(data);const a=document.createElement("a");a.href=url;a.download="proof-"+orderNo;a.click();URL.revokeObjectURL(url);
+alert("Pay on Delivery orders don't have payment proofs.");
 }
 function reorder(orderNo){
 const order=orders.find(o=>o.orderNo===orderNo);if(!order)return;
@@ -2070,9 +2059,8 @@ document.getElementById("pages").value=order.pages;
 document.getElementById("printType").value=order.printType;
 document.getElementById("deliveryArea").value=order.deliveryArea;
 document.getElementById("deliveryTime").value=order.deliveryTime;
-document.getElementById("paymentMethod").value=order.paymentMethod||"Cash";
 document.getElementById("notes").value=order.notes||"";
-togglePaymentProof();calculatePrice();window.scrollTo({top:0,behavior:"smooth"});
+calculatePrice();window.scrollTo({top:0,behavior:"smooth"});
 alert("Order details copied. Please upload the document again and submit.");
 }
 async function rateOrder(orderNo){
@@ -2115,7 +2103,7 @@ function buildInvoice(order){
  const safeFile=escapeHtml(order.fileName||"Uploaded document");
  const safeType=escapeHtml(typeLabel(order.printType));
  const safePages=escapeHtml(order.pages||"");
- const safePayment=escapeHtml(order.paymentMethod||"Cash");
+ const safePayment=escapeHtml(order.paymentMethod||"Pay on Delivery");
  const safePaymentStatus=escapeHtml(order.paymentStatus||"Pending");
  const safeDelivery=escapeHtml(order.deliveryStatus||"Not Dispatched");
  const safeStatus=escapeHtml(order.status||"Pending");
@@ -2156,7 +2144,7 @@ function buildInvoice(order){
       <b>LAMINATION :</b><div>${laminationText}</div>
       <b>DELIVERY :</b><div>${safeArea} • ${safeTime}</div>
       <b>DELIVERY FEE :</b><div>${deliveryFee}</div>
-      <b>PAYMENT :</b><div>${safePayment} • ${safePaymentStatus}</div>
+      <b>PAYMENT :</b><div>${safePayment}</div>
       <b>TOTAL :</b><div><b>R${total}</b></div>
       <b>STATUS :</b><div>${safeStatus} • ${safeDelivery}</div>
      </div>
@@ -2232,7 +2220,7 @@ function buildDeliveryLabel(order){
  const safeTime=escapeHtml(order.deliveryTime||"");
  const safeStatus=escapeHtml(order.status||"Pending");
  const safeDelivery=escapeHtml(order.deliveryStatus||"Not Dispatched");
- const safePayment=escapeHtml(order.paymentMethod||"");
+ const safePayment=escapeHtml(order.paymentMethod||"Pay on Delivery");
  const safeTotal=Number(order.total||0).toFixed(2);
  const laminationText=order.laminationTotal&&order.laminationTotal>0 ? "Yes (R"+order.laminationTotal+")" : "No";
  return `
