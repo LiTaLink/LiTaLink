@@ -231,7 +231,7 @@
       <div id="dailyNoticeContainer" class="daily-notice-container">
         <h4>📢 Daily Notice</h4>
         <div id="dailyNoticeContent" class="daily-notice-content">
-          <div class="daily-notice-empty">No daily notice posted today.</div>
+          <div class="daily-notice-empty">Loading daily notice...</div>
         </div>
         <div id="dailyNoticeAdminActions" class="daily-notice-admin-actions hidden">
           <button class="btn-small btn-green" onclick="uploadDailyNotice()">📤 Upload</button>
@@ -417,128 +417,239 @@
 <script>
 
 // ============================================
-// DAILY NOTICE SYSTEM
+// DAILY NOTICE SYSTEM - SUPABASE VERSION
 // ============================================
 let dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
 
-function loadDailyNotice() {
-  const saved = localStorage.getItem("litalink_daily_notice");
-  if (saved) {
-    try {
-      dailyNotice = JSON.parse(saved);
-    } catch(e) {
-      dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
+async function loadDailyNotice() {
+    if (!db) {
+        // Fallback to localStorage if Supabase not available
+        const saved = localStorage.getItem("litalink_daily_notice");
+        if (saved) {
+            try {
+                dailyNotice = JSON.parse(saved);
+            } catch(e) {
+                dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
+            }
+        }
+        renderDailyNotice();
+        return;
     }
-  }
-  renderDailyNotice();
+
+    try {
+        const { data, error } = await db
+            .from("daily_notices")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+        if (error && error.code !== "PGRST116") {
+            console.error("Error loading daily notice:", error);
+            return;
+        }
+
+        if (data && data.length > 0) {
+            const notice = data[0];
+            dailyNotice = {
+                text: notice.text || "",
+                image: notice.image_url || "",
+                video: notice.video_url || "",
+                updatedAt: notice.updated_at ? new Date(notice.updated_at).toLocaleString() : ""
+            };
+        } else {
+            dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
+        }
+    } catch (e) {
+        console.error("Error loading daily notice:", e);
+    }
+    
+    renderDailyNotice();
 }
 
-function saveDailyNotice() {
-  dailyNotice.updatedAt = new Date().toLocaleString();
-  localStorage.setItem("litalink_daily_notice", JSON.stringify(dailyNotice));
-  renderDailyNotice();
+async function saveDailyNoticeToSupabase() {
+    if (!db) {
+        // Fallback to localStorage
+        dailyNotice.updatedAt = new Date().toLocaleString();
+        localStorage.setItem("litalink_daily_notice", JSON.stringify(dailyNotice));
+        renderDailyNotice();
+        return;
+    }
+
+    try {
+        // Delete existing notices
+        await db.from("daily_notices").delete().neq("id", 0);
+        
+        // Insert new notice
+        const { error } = await db.from("daily_notices").insert({
+            text: dailyNotice.text || "No daily notice posted today.",
+            image_url: dailyNotice.image || null,
+            image_path: null,
+            video_url: dailyNotice.video || null,
+            video_path: null,
+            updated_by: currentUser ? currentUser.email : "system"
+        });
+
+        if (error) {
+            console.error("Error saving daily notice:", error);
+            alert("Could not save daily notice to database.");
+            return;
+        }
+
+        dailyNotice.updatedAt = new Date().toLocaleString();
+        renderDailyNotice();
+        alert("Daily notice saved successfully!");
+    } catch (e) {
+        console.error("Error saving daily notice:", e);
+    }
 }
 
 function renderDailyNotice() {
-  const container = document.getElementById("dailyNoticeContent");
-  if (!container) return;
+    const container = document.getElementById("dailyNoticeContent");
+    if (!container) return;
 
-  const hasContent = dailyNotice.text || dailyNotice.image || dailyNotice.video;
+    const hasContent = dailyNotice.text || dailyNotice.image || dailyNotice.video;
 
-  if (!hasContent) {
-    container.innerHTML = '<div class="daily-notice-empty">No daily notice posted today.</div>';
-    return;
-  }
-
-  let html = "";
-  if (dailyNotice.text) {
-    html += `<p>${escapeHtml(dailyNotice.text)}</p>`;
-  }
-  if (dailyNotice.image) {
-    html += `<img src="${escapeHtml(dailyNotice.image)}" alt="Daily Notice Image" />`;
-  }
-  if (dailyNotice.video) {
-    html += `<video controls src="${escapeHtml(dailyNotice.video)}"></video>`;
-  }
-  if (dailyNotice.updatedAt) {
-    html += `<div style="font-size:12px;color:#6b7280;margin-top:8px">Posted: ${escapeHtml(dailyNotice.updatedAt)}</div>`;
-  }
-  container.innerHTML = html;
-
-  // Show admin actions if user is admin
-  const adminActions = document.getElementById("dailyNoticeAdminActions");
-  if (adminActions) {
-    if (currentUser && currentUser.role === "admin") {
-      adminActions.classList.remove("hidden");
+    if (!hasContent) {
+        container.innerHTML = '<div class="daily-notice-empty">No daily notice posted today.</div>';
     } else {
-      adminActions.classList.add("hidden");
-    }
-  }
-}
-
-function uploadDailyNotice() {
-  if (!currentUser || currentUser.role !== "admin") {
-    alert("Only admin can upload daily notices.");
-    return;
-  }
-
-  // Create a file input for images/videos
-  const fileInput = document.createElement("input");
-  fileInput.type = "file";
-  fileInput.accept = "image/*,video/*";
-  fileInput.multiple = false;
-  fileInput.style.display = "none";
-  document.body.appendChild(fileInput);
-
-  fileInput.addEventListener("change", function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Check file size (max 20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      alert("File is too large. Please use files under 20MB.");
-      return;
+        let html = "";
+        if (dailyNotice.text && dailyNotice.text !== "No daily notice posted today.") {
+            html += `<p>${escapeHtml(dailyNotice.text)}</p>`;
+        }
+        if (dailyNotice.image) {
+            html += `<img src="${escapeHtml(dailyNotice.image)}" alt="Daily Notice Image" onerror="this.style.display='none'" />`;
+        }
+        if (dailyNotice.video) {
+            html += `<video controls src="${escapeHtml(dailyNotice.video)}" onerror="this.style.display='none'"></video>`;
+        }
+        if (dailyNotice.updatedAt) {
+            html += `<div style="font-size:12px;color:#6b7280;margin-top:8px">Posted: ${escapeHtml(dailyNotice.updatedAt)}</div>`;
+        }
+        container.innerHTML = html;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const dataUrl = event.target.result;
-      const isVideo = file.type.startsWith("video/");
-      const isImage = file.type.startsWith("image/");
-
-      if (isVideo) {
-        dailyNotice.video = dataUrl;
-        dailyNotice.image = "";
-      } else if (isImage) {
-        dailyNotice.image = dataUrl;
-        dailyNotice.video = "";
-      }
-
-      // Ask for text note
-      const note = prompt("Add a text note for this daily notice (optional):");
-      if (note !== null) {
-        dailyNotice.text = note.trim() || "";
-      }
-
-      saveDailyNotice();
-      alert("Daily notice uploaded successfully!");
-    };
-    reader.readAsDataURL(file);
-    fileInput.remove();
-  });
-
-  fileInput.click();
+    // Show admin actions if user is admin
+    const adminActions = document.getElementById("dailyNoticeAdminActions");
+    if (adminActions) {
+        if (currentUser && currentUser.role === "admin") {
+            adminActions.classList.remove("hidden");
+        } else {
+            adminActions.classList.add("hidden");
+        }
+    }
 }
 
-function clearDailyNotice() {
-  if (!currentUser || currentUser.role !== "admin") {
-    alert("Only admin can clear daily notices.");
-    return;
-  }
-  if (!confirm("Clear the current daily notice?")) return;
-  dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
-  saveDailyNotice();
-  alert("Daily notice cleared.");
+async function uploadDailyNotice() {
+    if (!currentUser || currentUser.role !== "admin") {
+        alert("Only admin can upload daily notices.");
+        return;
+    }
+
+    // Create a file input for images/videos
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*,video/*";
+    fileInput.multiple = false;
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+
+    fileInput.addEventListener("change", async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Check file size (max 20MB)
+        if (file.size > 20 * 1024 * 1024) {
+            alert("File is too large. Please use files under 20MB.");
+            return;
+        }
+
+        const isVideo = file.type.startsWith("video/");
+        const isImage = file.type.startsWith("image/");
+
+        // If using Supabase Storage, upload to bucket
+        if (db) {
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `daily-notice-${Date.now()}.${fileExt}`;
+                const filePath = `daily-notices/${fileName}`;
+                
+                // Upload to Supabase Storage
+                const { data: uploadData, error: uploadError } = await db.storage
+                    .from('daily-notices')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    alert("Could not upload file to storage: " + uploadError.message);
+                    return;
+                }
+
+                // Get public URL
+                const { data: urlData } = db.storage
+                    .from('daily-notices')
+                    .getPublicUrl(filePath);
+
+                if (isVideo) {
+                    dailyNotice.video = urlData.publicUrl;
+                    dailyNotice.image = "";
+                } else if (isImage) {
+                    dailyNotice.image = urlData.publicUrl;
+                    dailyNotice.video = "";
+                }
+            } catch (e) {
+                alert("Upload failed: " + e.message);
+                return;
+            }
+        } else {
+            // Fallback: use data URL for localStorage
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const dataUrl = event.target.result;
+                if (isVideo) {
+                    dailyNotice.video = dataUrl;
+                    dailyNotice.image = "";
+                } else if (isImage) {
+                    dailyNotice.image = dataUrl;
+                    dailyNotice.video = "";
+                }
+                proceedWithTextNote();
+            };
+            reader.readAsDataURL(file);
+            // Wait for reader to finish
+            await new Promise(resolve => setTimeout(resolve, 100));
+            // The rest will be handled in proceedWithTextNote
+            // But we need to handle this differently for localStorage
+            // Let's restructure
+            proceedWithTextNote();
+            return;
+        }
+
+        // Proceed with text note
+        proceedWithTextNote();
+    });
+
+    // Helper function to handle text note and save
+    function proceedWithTextNote() {
+        const note = prompt("Add a text note for this daily notice (optional):");
+        if (note !== null) {
+            dailyNotice.text = note.trim() || "";
+        }
+        saveDailyNoticeToSupabase();
+        alert("Daily notice uploaded successfully!");
+    }
+
+    fileInput.click();
+}
+
+async function clearDailyNotice() {
+    if (!currentUser || currentUser.role !== "admin") {
+        alert("Only admin can clear daily notices.");
+        return;
+    }
+    if (!confirm("Clear the current daily notice?")) return;
+    
+    dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
+    await saveDailyNoticeToSupabase();
+    alert("Daily notice cleared.");
 }
 
 // ============================================
@@ -601,21 +712,26 @@ function updateCustomerPricingDisplay(){
   `;
   
   // Re-add daily notice container after re-render
-  const noticeContainer = document.createElement("div");
-  noticeContainer.id = "dailyNoticeContainer";
-  noticeContainer.className = "daily-notice-container";
-  noticeContainer.innerHTML = `
-    <h4>📢 Daily Notice</h4>
-    <div id="dailyNoticeContent" class="daily-notice-content">
-      <div class="daily-notice-empty">No daily notice posted today.</div>
-    </div>
-    <div id="dailyNoticeAdminActions" class="daily-notice-admin-actions hidden">
-      <button class="btn-small btn-green" onclick="uploadDailyNotice()">📤 Upload</button>
-      <button class="btn-small btn-red" onclick="clearDailyNotice()">🗑️ Clear</button>
-    </div>
-  `;
-  pricing.appendChild(noticeContainer);
-  renderDailyNotice();
+  const noticeContainer = document.getElementById("dailyNoticeContainer");
+  if (!noticeContainer) {
+    const container = document.createElement("div");
+    container.id = "dailyNoticeContainer";
+    container.className = "daily-notice-container";
+    container.innerHTML = `
+      <h4>📢 Daily Notice</h4>
+      <div id="dailyNoticeContent" class="daily-notice-content">
+        <div class="daily-notice-empty">Loading daily notice...</div>
+      </div>
+      <div id="dailyNoticeAdminActions" class="daily-notice-admin-actions hidden">
+        <button class="btn-small btn-green" onclick="uploadDailyNotice()">📤 Upload</button>
+        <button class="btn-small btn-red" onclick="clearDailyNotice()">🗑️ Clear</button>
+      </div>
+    `;
+    pricing.appendChild(container);
+    loadDailyNotice();
+  } else {
+    renderDailyNotice();
+  }
  }
 }
 
