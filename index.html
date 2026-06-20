@@ -417,11 +417,17 @@
 <script>
 
 // ============================================
-// DAILY NOTICE SYSTEM - SUPABASE VERSION
+// DAILY NOTICE SYSTEM - SUPABASE VERSION (FIXED)
 // ============================================
 let dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
 
 async function loadDailyNotice() {
+    const container = document.getElementById("dailyNoticeContent");
+    if (!container) return;
+    
+    // Show loading state
+    container.innerHTML = '<div class="daily-notice-empty">Loading daily notice...</div>';
+
     if (!db) {
         // Fallback to localStorage if Supabase not available
         const saved = localStorage.getItem("litalink_daily_notice");
@@ -443,8 +449,10 @@ async function loadDailyNotice() {
             .order("created_at", { ascending: false })
             .limit(1);
 
+        // Check if there's an error (but PGRST116 means no rows, which is fine)
         if (error && error.code !== "PGRST116") {
             console.error("Error loading daily notice:", error);
+            container.innerHTML = '<div class="daily-notice-empty">Error loading notice. Please try again later.</div>';
             return;
         }
 
@@ -457,10 +465,13 @@ async function loadDailyNotice() {
                 updatedAt: notice.updated_at ? new Date(notice.updated_at).toLocaleString() : ""
             };
         } else {
+            // No notice found - use default empty notice
             dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
         }
     } catch (e) {
         console.error("Error loading daily notice:", e);
+        container.innerHTML = '<div class="daily-notice-empty">Error loading notice. Check console for details.</div>';
+        return;
     }
     
     renderDailyNotice();
@@ -491,7 +502,7 @@ async function saveDailyNoticeToSupabase() {
 
         if (error) {
             console.error("Error saving daily notice:", error);
-            alert("Could not save daily notice to database.");
+            alert("Could not save daily notice to database: " + error.message);
             return;
         }
 
@@ -500,6 +511,7 @@ async function saveDailyNoticeToSupabase() {
         alert("Daily notice saved successfully!");
     } catch (e) {
         console.error("Error saving daily notice:", e);
+        alert("Error saving daily notice: " + e.message);
     }
 }
 
@@ -507,7 +519,9 @@ function renderDailyNotice() {
     const container = document.getElementById("dailyNoticeContent");
     if (!container) return;
 
-    const hasContent = dailyNotice.text || dailyNotice.image || dailyNotice.video;
+    const hasContent = (dailyNotice.text && dailyNotice.text !== "No daily notice posted today.") || 
+                       dailyNotice.image || 
+                       dailyNotice.video;
 
     if (!hasContent) {
         container.innerHTML = '<div class="daily-notice-empty">No daily notice posted today.</div>';
@@ -543,6 +557,20 @@ async function uploadDailyNotice() {
     if (!currentUser || currentUser.role !== "admin") {
         alert("Only admin can upload daily notices.");
         return;
+    }
+
+    // Check if daily-notices bucket exists
+    if (db) {
+        try {
+            const { data: buckets } = await db.storage.listBuckets();
+            const bucketExists = buckets && buckets.some(b => b.name === 'daily-notices');
+            if (!bucketExists) {
+                alert("The 'daily-notices' storage bucket does not exist. Please create it in Supabase Storage first.");
+                return;
+            }
+        } catch (e) {
+            console.error("Error checking buckets:", e);
+        }
     }
 
     // Create a file input for images/videos
@@ -614,12 +642,7 @@ async function uploadDailyNotice() {
                 proceedWithTextNote();
             };
             reader.readAsDataURL(file);
-            // Wait for reader to finish
-            await new Promise(resolve => setTimeout(resolve, 100));
-            // The rest will be handled in proceedWithTextNote
-            // But we need to handle this differently for localStorage
-            // Let's restructure
-            proceedWithTextNote();
+            fileInput.remove();
             return;
         }
 
@@ -728,9 +751,6 @@ function updateCustomerPricingDisplay(){
       </div>
     `;
     pricing.appendChild(container);
-    loadDailyNotice();
-  } else {
-    renderDailyNotice();
   }
  }
 }
@@ -1305,7 +1325,6 @@ showLoggedInShell(currentUser);
   renderCustomerOrders();renderStationeryCategories();renderStationeryCustomer();renderCustomerStationeryOrders();
   renderWallArtCategories();renderWallArtCustomer();renderCustomerWallArtOrders();
  }
- renderDailyNotice();
 }
 
 function validateRegistrationTerms(){
