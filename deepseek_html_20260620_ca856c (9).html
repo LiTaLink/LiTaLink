@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LiTaLink™</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <style>
+    :root{--main:#1f2937;--accent:#2563eb;--light:#f3f4f6;--white:#fff;--green:#16a34a;--red:#dc2626;--orange:#f59e0b}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--light);color:var(--main)}header{background:var(--main);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}header h1{margin:0;font-size:22px}.container{width:min(1100px,94%);margin:28px auto}.card{background:#fff;padding:22px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.08);margin-bottom:20px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}label{display:block;margin-top:14px;font-weight:bold;font-size:14px}input,select,textarea,button{width:100%;padding:11px;margin-top:7px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}button{background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:bold;margin-top:18px}button:hover{opacity:.9}.link-btn{background:transparent;color:var(--accent);border:none;padding:0;margin:12px 0 0;text-align:left;width:auto}.btn-small{width:auto;padding:8px 12px;margin:3px;font-size:13px}.btn-green{background:var(--green)}.btn-red{background:var(--red)}.btn-orange{background:var(--orange)}.hidden{display:none!important}.price-box{background:#eff6ff;border:1px solid #bfdbfe;padding:14px;border-radius:10px;margin-top:16px;font-size:17px;font-weight:bold;line-height:1.7}table{width:100%;border-collapse:collapse;margin-top:15px;background:#fff}th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left;font-size:14px;vertical-align:top}th{background:#f9fafb}.status{padding:5px 8px;border-radius:999px;color:#fff;font-size:12px;display:inline-block}.Pending{background:var(--orange)}.Printing{background:var(--accent)}.Ready{background:var(--green)}.OutforDelivery{background:#7C3AED}.Delivered{background:#047857}.Cancelled{background:var(--red)}.top-actions{display:flex;gap:10px;align-items:center}.top-actions button{width:auto;margin:0;padding:9px 14px}.login-box{max-width:520px;margin:60px auto}.login-link-row{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.summary-number{font-size:28px;font-weight:bold;color:var(--accent)}.area-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #e5e7eb}.area-row button{width:auto;margin:0}.time-disabled{color:#9ca3af;background:#f3f4f6}.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px}.notice{background:#fff7ed;border:1px solid #fed7aa;padding:12px;border-radius:10px;margin-top:12px;font-size:14px}.muted-note{color:#64748b;font-size:13px;margin-top:6px}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.mini-card{background:#f9fafb;border:1px solid #e5e7eb;padding:12px;border-radius:10px}.progress{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}.progress span{display:block;height:100%;background:var(--accent)}.rating button{width:auto;background:#f59e0b;margin:3px}.btn-purple{background:#7c3aed}.btn-dark{background:#111827}.file-upload-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e5e7eb}
+.file-upload-info{min-width:0}
+.file-upload-name{font-weight:bold;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.file-upload-meta{font-size:13px;color:#374151;margin-top:3px}
+.file-print-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.file-print-actions button{width:auto !important;margin:2px;padding:4px 8px;font-size:11px;white-space:nowrap;border-radius:6px}
+.file-print-actions button.active-choice{outline:2px solid #111827;box-shadow:0 0 0 2px #fff inset}
+.file-laminate-btn{width:auto !important;margin:2px;padding:4px 8px;font-size:11px;white-space:nowrap;background:#7c3aed;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.file-laminate-btn.active-choice{outline:2px solid #111827;box-shadow:0 0 0 2px #fff inset}
+.file-laminate-btn:hover{opacity:.9}
+@media(max-width:720px){.file-upload-row{grid-template-columns:1fr}.file-print-actions{justify-content:flex-start}}
+
+.admin-action-menu{position:relative;display:inline-block}
+.admin-action-btn{width:auto;padding:8px 12px}
+.admin-action-dropdown{display:none;position:absolute;right:0;z-index:1000;background:#fff;border:1px solid #ddd;border-radius:8px;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.admin-action-dropdown button{display:block;width:100%;margin:0;border-radius:0;text-align:left}
+.admin-action-menu.open .admin-action-dropdown{display:block}
+
+.admin-file-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e5e7eb}
+.admin-file-name{font-weight:bold;display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-file-actions{display:flex;gap:8px;flex-shrink:0}
+@media(max-width:720px){.admin-file-row{grid-template-columns:1fr}.admin-file-actions{justify-content:flex-start}}
+
+
+.audit-timeline{margin-top:14px;display:grid;gap:10px}
+.audit-item{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;background:#f9fafb;border:1px solid #e5e7eb;border-left:5px solid var(--accent);padding:12px;border-radius:12px}
+.audit-date{font-size:12px;color:#6b7280;line-height:1.4}
+.audit-action{font-weight:bold;color:#111827}
+.audit-meta{font-size:13px;color:#374151;margin-top:3px}
+.audit-order{background:#eef2ff;color:#3730a3;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:bold;white-space:nowrap}
+.audit-empty{background:#f9fafb;border:1px dashed #d1d5db;padding:16px;border-radius:12px;color:#6b7280}
+@media(max-width:720px){.audit-item{grid-template-columns:1fr}.audit-order{width:max-content}}
+
+
+.audit-collapsible-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.audit-collapsible-content.hidden{display:none}
+
+
+.order-file-summary{display:flex;flex-direction:column;gap:6px;min-width:130px}
+.order-file-count{font-weight:bold;color:#111827}
+.order-file-list{display:none;margin-top:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px;max-width:420px}
+.order-file-list.open{display:block}
+.order-file-list div{font-size:13px;padding:4px 0;border-bottom:1px solid #e5e7eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-file-list div:last-child{border-bottom:none}
+.order-file-toggle{width:auto;margin:0;padding:7px 10px;font-size:13px;background:#111827}
+.adminOrdersTable td{max-width:260px}
+
+.customer-orders-table td{vertical-align:top}
+.customer-orders-table .order-file-summary{min-width:150px;max-width:320px}
+.customer-orders-table .order-file-list{max-width:320px}
+@media(max-width:720px){.customer-orders-table .order-file-summary{max-width:260px}.customer-orders-table .order-file-list{max-width:260px}}
+
+
+.delivery-queue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:12px}
+.delivery-queue-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px}
+.delivery-queue-title{font-weight:bold;color:#111827}
+.delivery-queue-count{font-size:26px;font-weight:bold;color:var(--accent);margin-top:6px}
+.delivery-queue-meta{font-size:13px;color:#6b7280;margin-top:4px}
+.delivery-badge{display:inline-block;background:#eef2ff;color:#3730a3;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:bold;margin-top:5px}
+.delivery-badge.overdue{background:#fee2e2;color:#991b1b}
+
+
+.pending-invoice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:12px}
+.pending-invoice-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px}
+.pending-invoice-title{font-weight:bold;color:#111827}
+.pending-invoice-count{font-size:22px;font-weight:bold;color:var(--accent);margin:6px 0}
+.pending-invoice-card button{margin-top:8px}
+.pending-invoice-card.empty{opacity:.65}
+
+
+.stationery-hero{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.stationery-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:14px}
+.stationery-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.stationery-card img{width:100%;height:130px;object-fit:cover;border-radius:10px;background:#f3f4f6}
+.stationery-name{font-weight:bold;margin-top:10px}
+.stationery-sub{font-size:13px;color:#6b7280;margin-top:3px}
+.stationery-price{font-size:18px;font-weight:bold;color:var(--accent);margin-top:8px}
+.stationery-actions{display:flex;gap:8px;align-items:center;margin-top:10px}
+.stationery-actions input{max-width:80px;margin:0}
+.stationery-nav-btn{background:#111827}
+.stationery-back{width:auto;background:#6b7280}
+
+
+.admin-hero{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.admin-tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.admin-tab-btn{width:auto;margin:0;padding:10px 14px;background:#e5e7eb;color:#111827;border:1px solid #d1d5db}
+.admin-tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.admin-tab-panel{display:block}
+.admin-two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+.admin-stat-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.admin-card-header{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.admin-card-header h3{margin:0}
+.admin-collapsible{padding-bottom:18px}
+@media(max-width:720px){.admin-tabs{position:static}.admin-tab-btn{flex:1 1 140px}.admin-two-col{grid-template-columns:1fr}.admin-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+.privacy-collapsible-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.privacy-collapsible-header h2{margin:0}
+.privacy-collapsible-content.hidden{display:none!important}
+
+
+.privacy-login-panel{margin-top:14px;max-height:320px;overflow:auto}
+.privacy-login-panel.hidden{display:none!important}
+
+
+.privacy-login-panel{margin-top:14px;max-height:320px;overflow:auto}
+.privacy-login-panel.hidden{display:none!important}
+#loginPrivacyNoticeBtn{border:1px solid #bfdbfe;border-radius:999px;padding:6px 10px;background:#eff6ff;color:var(--accent);font-size:13px}
+#loginPrivacyNoticeBtn:hover{background:#dbeafe}
+
+
+.daily-notice-container{background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:16px;margin-top:16px}
+.daily-notice-container h4{margin:0 0 8px 0;color:#166534;display:flex;align-items:center;gap:8px}
+.daily-notice-content{font-size:15px;color:#14532d;line-height:1.6}
+.daily-notice-content img{max-width:100%;border-radius:8px;margin:8px 0;max-height:400px;object-fit:contain}
+.daily-notice-content video{max-width:100%;border-radius:8px;margin:8px 0;max-height:400px}
+.daily-notice-empty{color:#6b7280;font-style:italic;padding:12px 0}
+.daily-notice-admin-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.daily-notice-admin-actions button{width:auto;margin:0;padding:6px 12px;font-size:13px}
+.refresh-btn{background:#111827;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold}
+.refresh-btn:hover{opacity:.8}
+
+@media(max-width:780px){
+ .invoice-barcode-row{display:block!important}
+ .invoice-barcode-wrap{margin-top:18px}
+ .real-invoice-barcode{max-width:100%!important}
+}
+
+@media print{body *{visibility:hidden}#invoiceArea,#invoiceArea *{visibility:visible}#invoiceArea{position:absolute;left:0;top:0;width:100%}.no-print{display:none!important}}
+  </style>
+</head>
+<body>
+<header><div><h1>LiTaLink™</h1><small>Your Link to Convenience.</small></div><div class="top-actions hidden" id="topActions"><span id="loggedInText"></span><button onclick="logout()">Logout</button></div></header>
+<main class="container">
+<section id="loginSection" class="card login-box">
+  <div id="loginBox">
+    <h2>Login</h2>
+    <label>Email</label><input type="email" id="loginEmail" autocomplete="email" />
+    <label>Password</label><input type="password" id="loginPassword" autocomplete="current-password" />
+    <button onclick="login()">Login</button>
+    <button class="link-btn" onclick="showForgotPassword()">Forgot Password?</button>
+    <div class="login-link-row">
+      <button class="link-btn" onclick="showRegister()">Create customer account</button>
+      <button type="button" class="link-btn" id="loginPrivacyNoticeBtn">Privacy Notice</button>
+    </div>
+    <div id="loginPrivacyNoticeBox" class="legal-box privacy-login-panel hidden">
+
+      <h3>Privacy Notice & Terms</h3>
+      <p>Please review LiTaLink™ Privacy Notice, Terms & Conditions, and User Responsibility Policy before creating an account or placing an order.</p>
+      <p>
+        <a href="LiTaLink_Privacy_and_Terms_Official.pdf" target="_blank" rel="noopener">
+          View Privacy Notice, Terms & Conditions PDF
+        </a>
+      </p>
+      <p>For privacy requests, account questions, support issues or copyright complaints, contact us on <a href="https://wa.me/27766473143" target="_blank">WhatsApp</a>.</p>
+
+    </div>
+  </div>
+  <div id="forgotPasswordBox" class="hidden">
+    <h2>Forgot Password</h2>
+    <p>Enter your email address and we will send you a password reset link.</p>
+    <label>Email</label><input type="email" id="resetEmail" autocomplete="email" />
+    <button onclick="sendPasswordReset()">Send Reset Link</button>
+    <button class="link-btn" onclick="showLogin()">Back to login</button>
+  </div>
+  <div id="passwordResetBox" class="hidden">
+    <h2>Create New Password</h2>
+    <label>New Password</label><input type="password" id="newPassword" minlength="6" autocomplete="new-password" />
+    <button onclick="updatePassword()">Update Password</button>
+  </div>
+  <div id="registerBox" class="hidden">
+    <h2>Register</h2>
+    <label>Full Name</label><input type="text" id="regName" maxlength="60" autocomplete="name" />
+    <label>Email</label><input type="email" id="regEmail" autocomplete="email" />
+    <label>Phone Number</label><input type="tel" id="regPhone" maxlength="15" autocomplete="tel" />
+    <label>Password</label><input type="password" id="regPassword" minlength="6" autocomplete="new-password" />
+
+    <label><input type="checkbox" id="regAcceptTerms" style="width:auto;margin-right:8px" required /> I have read and agree to the <a href="LiTaLink_Privacy_and_Terms_Official.pdf" target="_blank" rel="noopener">LiTaLink™ Privacy Notice, Terms & Conditions, and User Responsibility Policy</a>.</label>
+    <button onclick="registerUser()">Register</button>
+    <button class="link-btn" onclick="showLogin()">Back to login</button>
+  </div>
+</section>
+<section id="customerSection" class="hidden">
+  <div class="card"><div class="stationery-hero">
+      <div>
+        <h2>Customer Dashboard</h2>
+        <p>Upload your document, choose delivery details, and track your order.</p>
+      </div>
+    </div>
+    <div style="display:flex;gap:20px;margin-top:20px;flex-wrap:wrap;">
+      <button class="stationery-nav-btn" style="flex:1;min-width:250px;" onclick="openStationeryShop()">Order Stationery</button>
+      <button class="stationery-nav-btn" style="flex:1;min-width:250px;" onclick="openWallArtShop()">Wall Art Inspo</button>
+    </div></div>
+  <div class="grid">
+    <form class="card" id="orderForm"><h3>Place Print Order</h3>
+      <label>Full Name</label><input type="text" id="customerName" maxlength="60" required />
+      <label>Phone Number</label><input type="tel" id="customerPhone" maxlength="15" required />
+      <label>Upload Document(s)</label><input type="file" id="documentFile" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" multiple />
+      <label>Number of Pages</label><input type="number" id="pages" min="1" max="500" value="1" readonly required />
+      <div id="fileOptionsBox" class="notice hidden"></div>
+      <label>Default Print Type</label><select id="printType" onchange="calculatePrice()"><option value="bw">Black & White</option><option value="colour">Colour</option></select>
+      <label>Delivery Area</label><select id="deliveryArea" required></select>
+      <label>Delivery Time</label><select id="deliveryTime" required><option value="">Choose delivery time</option><option value="07:00">07:00</option><option value="12:00">12:00</option><option value="17:00">17:00</option><option value="23:00">23:00</option></select>
+      <label>Payment Method</label>
+      <div style="padding:11px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:15px;margin-top:7px">
+        <strong>Pay on Delivery</strong> <span style="color:#6b7280;font-size:13px">(EFT/Transfer or Cash)</span>
+      </div>
+      <label>Extra Notes</label><textarea id="notes" rows="3"></textarea>
+      <div class="price-box" id="priceBox"></div>
+      <label><input type="checkbox" id="acceptTerms" style="width:auto;margin-right:8px" required /> I confirm that I have the legal right to upload/print these files and accept the <a href="LiTaLink_Privacy_and_Terms_Official.pdf" target="_blank" rel="noopener">LiTaLink™ Privacy Notice, Terms & Conditions, and User Responsibility Policy</a>.</label><button type="submit">Submit Order</button>
+    </form>
+    <div class="card" id="customerPricingBox"><h3>Pricing</h3><p><b>Black & White:</b> R3 per page</p><p><b>Colour:</b> R5 per page</p><p><b>Lamination:</b> R10 per page</p><p><b>Delivery fee:</b> R25</p><p><b>Free delivery:</b> When printing cost is R30 or more</p></div>
+  </div>
+  <div class="card"><h3>My Orders</h3><div style="overflow-x:auto"><table class="customer-orders-table"><thead><tr><th>Order No.</th><th>Files</th><th>Pages</th><th>Type</th><th>Lamination</th><th>Delivery</th><th>Payment</th><th>Delivery Status</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="customerOrders"></tbody></table></div></div>
+</section>
+
+<section id="stationerySection" class="hidden">
+  <div class="card">
+    <div class="stationery-hero">
+      <div>
+        <h2>Stationery Shop</h2>
+        <p>Order stationery items separately from print orders.</p>
+      </div>
+      <button class="stationery-back" onclick="backToCustomerDashboard()">Back to Print Orders</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Available Stationery</h3>
+    <div id="stationeryCustomerGrid" class="stationery-grid"></div>
+  </div>
+  <div class="card">
+    <h3>My Stationery Orders</h3>
+    <div style="overflow-x:auto"><table><thead><tr><th>Order No.</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody id="customerStationeryOrders"></tbody></table></div>
+  </div>
+
+</section>
+
+<section id="wallArtSection" class="hidden">
+  <div class="card">
+    <div class="stationery-hero">
+      <div>
+        <h2>Wall Art Inspo</h2>
+        <p>Choose inspiring wall art designs and order them the same way you order stationery.</p>
+      </div>
+      <button class="stationery-back" onclick="backToCustomerDashboard()">Back to Dashboard</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Available Wall Art Inspo</h3>
+    <div id="wallArtCustomerGrid" class="stationery-grid"></div>
+  </div>
+
+  <div class="card">
+    <h3>My Wall Art Inspo Orders</h3>
+    <div style="overflow-x:auto"><table><thead><tr><th>Order No.</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody id="customerWallArtOrders"></tbody></table></div>
+  </div>
+</section>
+
+<section id="adminSection" class="hidden">
+  <div class="card admin-hero">
+    <div>
+      <h2>Admin Dashboard</h2>
+      <p>Manage orders, deliveries, store, stock, payments, and reports.</p>
+    </div>
+    <div>
+      <button class="refresh-btn" onclick="forceRefreshUI()">🔄 Refresh All Data</button>
+    </div>
+  </div>
+
+  <div class="admin-tabs card">
+    <button type="button" class="admin-tab-btn active" onclick="showAdminTab('dashboard', this)">📊 Dashboard</button>
+    <button type="button" class="admin-tab-btn" onclick="showAdminTab('orders', this)">📋 Orders</button>
+    <button type="button" class="admin-tab-btn" onclick="showAdminTab('deliveries', this)">🚚 Deliveries</button>
+    <button type="button" class="admin-tab-btn" onclick="showAdminTab('store', this)">🛒 Store</button>
+    <button type="button" class="admin-tab-btn" onclick="showAdminTab('settings', this)">⚙️ Settings</button>
+  </div>
+
+  <div id="adminTab_dashboard" class="admin-tab-panel">
+    <div class="grid admin-stat-grid"><div class="card"><h3>Total Orders</h3><div class="summary-number" id="totalOrders">0</div></div><div class="card"><h3>Total Money</h3><div class="summary-number" id="totalMoney">R0</div></div><div class="card"><h3>Pending Orders</h3><div class="summary-number" id="pendingOrders">0</div></div><div class="card"><h3>Today's Orders</h3><div class="summary-number" id="todayOrders">0</div></div></div>
+    <div class="admin-two-col">
+      <div class="card"><h3>Pending Delivery Queue</h3><p style="color:#6b7280;margin-top:4px">Pending orders grouped by selected delivery time.</p><div class="delivery-queue-grid" id="deliveryQueueCards"></div></div>
+      <div class="card"><h3>Analytics Dashboard</h3><div class="stat-grid" id="analyticsCards"></div></div>
+    </div>
+  </div>
+
+  <div id="adminTab_orders" class="admin-tab-panel hidden">
+    <div class="card"><h3>All Orders</h3><div class="filter-row"><input type="text" id="adminSearch" placeholder="Search name, order no, phone, file..." oninput="renderAdminOrders()" /><select id="statusFilter" onchange="renderAdminOrders()"><option value="">All statuses</option><option value="Pending">Pending</option><option value="Printing">Printing</option><option value="Ready">Ready</option><option value="Cancelled">Cancelled</option><option value="Delivered">Delivered</option></select><button onclick="exportOrdersCSV()">Export CSV</button></div><div style="overflow-x:auto"><table class="adminOrdersTable"><thead><tr><th>Order No.</th><th>Client</th><th>Contact</th><th>Files</th><th>Pages</th><th>Type</th><th>Lamination</th><th>Delivery</th><th>Payment</th><th>Delivery Status</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminOrders"></tbody></table></div></div>
+    <div class="admin-two-col">
+      <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('adminStationeryOrdersPanel')"><h3>Stationery Orders</h3><span id="adminStationeryOrdersPanelIcon">▶</span></div><div id="adminStationeryOrdersPanel" class="hidden"><div style="overflow-x:auto"><table><thead><tr><th>Order No.</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminStationeryOrders"></tbody></table></div></div></div>
+      <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('adminWallArtOrdersPanel')"><h3>Wall Art Inspo Orders</h3><span id="adminWallArtOrdersPanelIcon">▶</span></div><div id="adminWallArtOrdersPanel" class="hidden"><div style="overflow-x:auto"><table><thead><tr><th>Order No.</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="adminWallArtOrders"></tbody></table></div></div></div>
+    </div>
+  </div>
+
+  <div id="adminTab_deliveries" class="admin-tab-panel hidden">
+    <div class="admin-two-col">
+      <div class="card"><h3>Pending Delivery Queue</h3><p style="color:#6b7280;margin-top:4px">Pending orders grouped by selected delivery time.</p><div class="delivery-queue-grid" id="deliveryQueueCardsDeliveries"></div></div>
+      <div class="card"><h3>📦 Pending Invoices</h3><p style="color:#6b7280;margin-top:4px">Download pending invoices by delivery time. No typing needed.</p><div class="pending-invoice-grid" id="pendingInvoiceZipCards"></div></div>
+    </div>
+
+    <div class="card"><h3>Delivery Labels</h3><p style="color:#6b7280;margin-top:4px">Download one combined label document per delivery time.</p>
+      <div class="pending-invoice-grid">
+        <div class="pending-invoice-card"><div class="pending-invoice-title">07:00 Labels</div><button class="btn-dark" onclick="downloadDeliveryLabelsByTime('07:00')">Download Labels</button></div>
+        <div class="pending-invoice-card"><div class="pending-invoice-title">12:00 Labels</div><button class="btn-dark" onclick="downloadDeliveryLabelsByTime('12:00')">Download Labels</button></div>
+        <div class="pending-invoice-card"><div class="pending-invoice-title">17:00 Labels</div><button class="btn-dark" onclick="downloadDeliveryLabelsByTime('17:00')">Download Labels</button></div>
+        <div class="pending-invoice-card"><div class="pending-invoice-title">23:00 Labels</div><button class="btn-dark" onclick="downloadDeliveryLabelsByTime('23:00')">Download Labels</button></div>
+      </div>
+    </div>
+    <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('deliveryPlacesPanel')"><h3>Manage Delivery Places</h3><span id="deliveryPlacesPanelIcon">▶</span></div><div id="deliveryPlacesPanel" class="hidden"><div class="grid"><div><label>New delivery place</label><input type="text" id="newDeliveryArea" /><button onclick="addDeliveryArea()">Add Place</button></div><div><h4>Current Places</h4><div id="deliveryAreaList"></div></div></div></div></div>
+  </div>
+
+  <div id="adminTab_store" class="admin-tab-panel hidden">
+    <div class="admin-two-col">
+      <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('printingPricesPanel')"><h3>Manage Printing Prices</h3><span id="printingPricesPanelIcon">▶</span></div><div id="printingPricesPanel" class="hidden"><p style="color:#6b7280;margin-top:4px">Admin can update all print and delivery pricing used by customer orders.</p><div class="grid"><div><label>Black & White price per page (R)</label><input type="number" id="priceBw" min="0" step="0.01" /><label>Colour price per page (R)</label><input type="number" id="priceColour" min="0" step="0.01" /><label>Lamination price per page (R)</label><input type="number" id="priceLamination" min="0" step="0.01" value="10" /><label>Delivery fee (R)</label><input type="number" id="priceDeliveryFee" min="0" step="0.01" /><label>Free delivery minimum printing cost (R)</label><input type="number" id="priceFreeDeliveryMinimum" min="0" step="0.01" /><button onclick="savePrintingPrices()">Save Printing Prices</button></div><div id="printingPriceStatus"></div></div></div></div>
+      <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('stockPanel')"><h3>Stock</h3><span id="stockPanelIcon">▶</span></div><div id="stockPanel" class="hidden"><div class="grid"><div><label>Paper Stock (Sheets)</label><input type="number" id="paperStock" min="0" value="0" /><label>Ink/Toner Level (%)</label><input type="number" id="inkStock" min="0" max="100" value="0" /><button onclick="saveStock()">Save Stock</button></div><div id="stockStatus"></div></div></div></div>
+    </div>
+
+    <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('stationeryManagePanel')"><h3>Manage Stationery</h3><span id="stationeryManagePanelIcon">▶</span></div>
+      <div id="stationeryManagePanel" class="hidden"><div class="grid">
+        <div>
+          <h4>Stationery Categories</h4>
+          <label>New Category</label><input type="text" id="newStationeryCategory" placeholder="e.g. Pens" />
+          <button onclick="addStationeryCategory()">Add Category</button>
+          <div id="stationeryCategoryList" style="margin-top:12px"></div>
+          <hr style="margin:18px 0;border:none;border-top:1px solid #e5e7eb">
+          <h4>Add Stationery Item</h4>
+          <label>Item Name</label><input type="text" id="stationeryName" placeholder="e.g. Blue Pen" />
+          <label>Category</label><select id="stationeryCategory"></select>
+          <label>Upload Image</label><input type="file" id="stationeryImageFile" accept=".jpg,.jpeg,.png,.webp,.gif" />
+          <label>Price</label><input type="number" id="stationeryPrice" min="0" step="0.01" />
+          <button onclick="saveStationeryItem()">Save Stationery Item</button>
+        </div>
+        <div>
+          <h4>Current Stationery Items</h4>
+          <div id="adminStationeryList"></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('wallArtManagePanel')"><h3>Manage Wall Art Inspo</h3><span id="wallArtManagePanelIcon">▶</span></div>
+      <div id="wallArtManagePanel" class="hidden"><div class="grid">
+        <div>
+          <h4>Wall Art Categories</h4>
+          <label>New Category</label><input type="text" id="newWallArtCategory" placeholder="e.g. Motivational" />
+          <button class="btn-purple" onclick="addWallArtCategory()">Add Category</button>
+          <div id="wallArtCategoryList" style="margin-top:12px"></div>
+          <hr style="margin:18px 0;border:none;border-top:1px solid #e5e7eb">
+          <h4>Add Wall Art Item</h4>
+          <label>Item Name</label><input type="text" id="wallArtName" placeholder="e.g. A4 Motivational Wall Art" />
+          <label>Category</label><select id="wallArtCategory"></select>
+          <label>Upload Image</label><input type="file" id="wallArtImageFile" accept=".jpg,.jpeg,.png,.webp,.gif" />
+          <label>Price</label><input type="number" id="wallArtPrice" min="0" step="0.01" />
+          <button class="btn-purple" onclick="saveWallArtItem()">Save Wall Art Item</button>
+        </div>
+        <div>
+          <h4>Current Wall Art Items</h4>
+          <div id="adminWallArtList"></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div id="adminTab_settings" class="admin-tab-panel hidden">
+    <div class="card admin-collapsible"><div class="admin-card-header" onclick="toggleAdminSection('auditContent')"><h3>Audit Log</h3><span id="auditContentIcon">▶</span></div><div id="auditContent" class="hidden"><p style="color:#6b7280;margin-top:4px">Recent admin and order activity.</p><div id="auditLogBody" class="audit-timeline"></div></div></div>
+  </div>
+</section>
+<section id="filePreviewArea" class="card hidden"></section>
+<section id="invoiceArea" class="card hidden"></section>
+
+<section id="privacyPolicySection" class="card hidden">
+  <div class="privacy-collapsible-header" onclick="togglePrivacyNotice()">
+    <h2>Privacy Notice (POPIA) & User Responsibility</h2>
+    <span id="privacyNoticeIcon">▶</span>
+  </div>
+  <div id="privacyNoticeContent" class="privacy-collapsible-content hidden">
+
+      <h3>Privacy Notice & Terms</h3>
+      <p>Please review LiTaLink™ Privacy Notice, Terms & Conditions, and User Responsibility Policy before creating an account or placing an order.</p>
+      <p>
+        <a href="LiTaLink_Privacy_and_Terms_Official.pdf" target="_blank" rel="noopener">
+          View Privacy Notice, Terms & Conditions PDF
+        </a>
+      </p>
+      <p>For privacy requests, account questions, support issues or copyright complaints, contact us on <a href="https://wa.me/27766473143" target="_blank">WhatsApp</a>.</p>
+
+    </div>
+</section>
+
+<footer style="text-align:center;padding:18px;color:#6b7280;font-size:13px">LiTaLink™ — Your Link to Convenience. | Support: <a href="https://wa.me/27766473143" target="_blank" style="color:#6b7280">WhatsApp Support</a></footer>
+</main>
+
+<script>
+// =============================================
+// SUPABASE API KEYS
+// =============================================
+const SUPABASE_URL = "https://uhebnewmoffyfihegtzd.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoZWJuZXdtb2ZmeWZpaGVndHpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5MDE2MjEsImV4cCI6MjA5NzQ3NzYyMX0.mBG31pcaPEhWlj7y95WwDzqTWI5qVEIqiP4XsSbZ4z8";
+
+// =============================================
+// SIMPLIFIED SUPABASE CONNECTION - FIXED
+// =============================================
+console.log('🔗 Connecting to Supabase...');
+console.log('📡 URL:', SUPABASE_URL);
+console.log('🔑 Key length:', SUPABASE_ANON_KEY.length);
+
+// Check if Supabase library is loaded
+if (!window.supabase) {
+    console.error('❌ Supabase library not loaded! Check internet connection.');
+    alert('Supabase library not loaded. Please check your internet connection and refresh.');
+}
+
+// Create the client
+const db = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+if (db) {
+    console.log('✅ Supabase connected successfully!');
+    // Test the connection
+    db.from('profiles').select('count').limit(1).then(() => {
+        console.log('✅ Database connection verified!');
+    }).catch(err => {
+        console.warn('⚠️ Database connection warning:', err.message);
+    });
+} else {
+    console.error('❌ Failed to create Supabase client!');
+    alert('Failed to connect to database. Please refresh and try again.');
+}
+
+// =============================================
+// GLOBAL VARIABLES
+// =============================================
+const FALLBACK_ADMIN_EMAIL = "admin@mkprint.co.za";
+const adminWhatsAppNumber = "27766473143";
+const paymentProofBucket = "payment-proofs";
+const stationeryImageBucket = "stationery-images";
+const wallArtImageBucket = "wall-art-images";
+const defaultPrintingPrices = { bw: 3, colour: 5, lamination: 10, deliveryFee: 25, freeDeliveryMinimum: 30 };
+let printingPrices = { ...defaultPrintingPrices };
+const maxFileSize = 45 * 1024 * 1024; // 45MB
+const storageBucket = "order-documents";
+const allowedUploadExtensions = ["pdf", "jpg", "jpeg", "png", "gif", "webp"];
+const allowedUploadMimeTypes = ["application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp"];
+const blockedFileNameWords = [];
+
+let currentUser = null;
+let customerUsers = [];
+let orders = [];
+let deliveryAreas = [];
+let auditLogs = [];
+let stock = { paper: 0, ink: 0 };
+let stationeryItems = [];
+let stationeryOrders = [];
+let stationeryCategories = [];
+let wallArtItems = [];
+let wallArtOrders = [];
+let wallArtCategories = [];
+let realtimeChannel = null;
+let dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
+let selectedFileDetails = [];
+let selectedFilesStore = [];
+let selectedFileTypes = {};
+let selectedFilePages = {};
+let selectedFileLamination = {};
+
+// =============================================
+// UTILITY FUNCTIONS
+// =============================================
+function requireSupabase() {
+    if (!db) {
+        alert("Supabase is not connected.");
+        return false;
+    }
+    return true;
+}
+
+function getCleanRedirectUrl() {
+    return window.location.origin + window.location.pathname;
+}
+
+function escapeHtml(v) {
+    return String(v || "").replace(/[&<>"']/g, m => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+    }[m]));
+}
+
+function formatRand(value) {
+    const n = Number(value || 0);
+    return Number.isInteger(n) ? String(n) : n.toFixed(2);
+}
+
+function localGet(key, backup) {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(backup));
+}
+
+function localSet(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+function saveAuditLogs() { localSet("auditLogs", auditLogs); }
+function saveStockLocal() { localSet("litalinkStock", stock); }
+
+function todayString() { return new Date().toDateString(); }
+
+function typeLabel(type) {
+    return type === "bw" ? "Black & White" : type === "colour" ? "Colour" : type === "mixed" ? "Mixed" : "Colour";
+}
+
+function statusClass(v) {
+    return String(v || "").replace(/\s+/g, "");
+}
+
+function fileKey(file) {
+    return [file.name, file.size, file.lastModified].join("|");
+}
+
+function getUploadExtension(file) {
+    return (file.name || "").split(".").pop().toLowerCase();
+}
+
+function formatFileSize(bytes) {
+    if (!bytes && bytes !== 0) return "";
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+function displayFileName(file, index) {
+    const ext = (file.name || "").split(".").pop().toLowerCase();
+    const looksAutoCrop = /^auto_crop#/i.test(file.name || "");
+    if (looksAutoCrop && ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+        return "Image " + (index + 1) + "." + ext;
+    }
+    return file.name || ("File " + (index + 1));
+}
+
+function getDisplayFileName(name, index) {
+    const original = String(name || ("File " + (index + 1)));
+    const ext = (original.split(".").pop() || "file").toLowerCase();
+    if (/^auto_crop#/i.test(original)) {
+        return "Image " + (index + 1) + "." + ext;
+    }
+    return original;
+}
+
+function safeZipFileName(fileName, index) {
+    const original = String(fileName || ("file_" + (index + 1)));
+    const ext = (original.split(".").pop() || "file").toLowerCase();
+    if (/^auto_crop#/i.test(original)) {
+        return "Image_" + (index + 1) + "." + ext;
+    }
+    return original.replace(/[\\/:*?"<>|]/g, "_");
+}
+
+function isAllowedUpload(file) {
+    const ext = getUploadExtension(file);
+    return allowedUploadExtensions.includes(ext);
+}
+
+function hasBlockedFileName(file) {
+    const name = String(file.name || "").toLowerCase();
+    return blockedFileNameWords.some(word => name.includes(word));
+}
+
+function deliverySlotLabel(time) {
+    if (!time) return "No time";
+    return "Before " + time;
+}
+
+function isDeliveryOverdue(time, status) {
+    if (!time) return false;
+    if (status === "Delivered" || status === "Cancelled") return false;
+    const [h, m] = String(time).split(":").map(Number);
+    if (Number.isNaN(h)) return false;
+    const due = new Date();
+    due.setHours(h, m || 0, 0, 0);
+    return new Date() > due;
+}
+
+function deliveryBadgeHtml(order) {
+    const label = deliverySlotLabel(order.deliveryTime);
+    const overdue = isDeliveryOverdue(order.deliveryTime, order.status);
+    return `<span class="delivery-badge ${overdue ? "overdue" : ""}">${overdue ? "Overdue: " : ""}${escapeHtml(label)}</span>`;
+}
+
+function getOrderFileNames(order) {
+    return String(order.fileName || "")
+        .split(",")
+        .map(v => v.trim())
+        .filter(Boolean);
+}
+
+function toggleOrderFiles(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("open");
+}
+
+function buildOrderFilesHtml(order) {
+    const files = getOrderFileNames(order);
+    if (!files.length) return "No file";
+    const listId = "files_" + String(order.orderNo).replace(/[^a-zA-Z0-9_]/g, "_");
+    const countText = files.length === 1 ? "1 file" : files.length + " files";
+    const list = files.map((name, i) => `<div title="${escapeHtml(name)}">📄 ${escapeHtml(getDisplayFileName(name, i))}</div>`).join("");
+    return `<div class="order-file-summary">
+        <span class="order-file-count">${countText}</span>
+        <button type="button" class="btn-small order-file-toggle" onclick="toggleOrderFiles('${listId}')">Files ▼</button>
+        <div class="order-file-list" id="${listId}">${list}</div>
+    </div>`;
+}
+
+// =============================================
+// FORCE UI REFRESH - INSTANT UPDATES
+// =============================================
+function forceRefreshUI() {
+    console.log("🔄 Force refreshing UI...");
+    try {
+        updatePricingDisplay();
+        updateCustomerPricingDisplay();
+        renderStock();
+        renderDeliveryAreas();
+        renderDailyNotice();
+        calculatePrice();
+        if (currentUser && currentUser.role === "admin") {
+            renderAdminOrders();
+            renderAdminStationery();
+            renderAdminStationeryOrders();
+            renderAdminWallArt();
+            renderAdminWallArtOrders();
+            renderAnalytics();
+            renderDeliveryQueue();
+            renderPendingInvoiceZipCards();
+        }
+        if (currentUser && currentUser.role === "customer") {
+            renderCustomerOrders();
+            renderStationeryCustomer();
+            renderCustomerStationeryOrders();
+            renderWallArtCustomer();
+            renderCustomerWallArtOrders();
+        }
+        console.log("✅ UI refresh complete!");
+    } catch (e) {
+        console.warn("Refresh error:", e);
+    }
+}
+window.forceRefreshUI = forceRefreshUI;
+
+// =============================================
+// DAILY NOTICE FUNCTIONS
+// =============================================
+function loadDailyNotice() {
+    const saved = localStorage.getItem("litalink_daily_notice");
+    if (saved) {
+        try { dailyNotice = JSON.parse(saved); } catch (e) {}
+    }
+    renderDailyNotice();
+}
+
+function saveDailyNotice() {
+    dailyNotice.updatedAt = new Date().toLocaleString();
+    localStorage.setItem("litalink_daily_notice", JSON.stringify(dailyNotice));
+    renderDailyNotice();
+    forceRefreshUI();
+}
+
+function renderDailyNotice() {
+    const container = document.getElementById("dailyNoticeContent");
+    if (!container) return;
+    const hasContent = dailyNotice.text || dailyNotice.image || dailyNotice.video;
+    if (!hasContent) {
+        container.innerHTML = '<div class="daily-notice-empty">No daily notice posted today.</div>';
+        return;
+    }
+    let html = "";
+    if (dailyNotice.text) html += `<p>${escapeHtml(dailyNotice.text)}</p>`;
+    if (dailyNotice.image) html += `<img src="${escapeHtml(dailyNotice.image)}" alt="Daily Notice Image" />`;
+    if (dailyNotice.video) html += `<video controls src="${escapeHtml(dailyNotice.video)}"></video>`;
+    if (dailyNotice.updatedAt) html += `<div style="font-size:12px;color:#6b7280;margin-top:8px">Posted: ${escapeHtml(dailyNotice.updatedAt)}</div>`;
+    container.innerHTML = html;
+    const adminActions = document.getElementById("dailyNoticeAdminActions");
+    if (adminActions) {
+        if (currentUser && currentUser.role === "admin") {
+            adminActions.classList.remove("hidden");
+        } else {
+            adminActions.classList.add("hidden");
+        }
+    }
+}
+
+function uploadDailyNotice() {
+    if (!currentUser || currentUser.role !== "admin") {
+        alert("Only admin can upload daily notices.");
+        return;
+    }
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*,video/*";
+    fileInput.style.display = "none";
+    document.body.appendChild(fileInput);
+    fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 20 * 1024 * 1024) {
+            alert("File is too large. Please use files under 20MB.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const dataUrl = event.target.result;
+            if (file.type.startsWith("video/")) {
+                dailyNotice.video = dataUrl;
+                dailyNotice.image = "";
+            } else if (file.type.startsWith("image/")) {
+                dailyNotice.image = dataUrl;
+                dailyNotice.video = "";
+            }
+            const note = prompt("Add a text note for this daily notice (optional):");
+            if (note !== null) dailyNotice.text = note.trim() || "";
+            saveDailyNotice();
+            alert("✅ Daily notice uploaded successfully!");
+        };
+        reader.readAsDataURL(file);
+        fileInput.remove();
+    };
+    fileInput.click();
+}
+
+function clearDailyNotice() {
+    if (!currentUser || currentUser.role !== "admin") {
+        alert("Only admin can clear daily notices.");
+        return;
+    }
+    if (!confirm("Clear the current daily notice?")) return;
+    dailyNotice = { text: "", image: "", video: "", updatedAt: "" };
+    saveDailyNotice();
+    alert("✅ Daily notice cleared.");
+}
+
+// =============================================
+// FIXED: getProfileRole() - Uses user_id, not id
+// =============================================
+async function getProfileRole() {
+    if (!db) return "customer";
+    try {
+        const { data: { user }, error: userError } = await db.auth.getUser();
+        if (userError || !user) {
+            console.warn("No authenticated user found");
+            return "customer";
+        }
+        // FIXED: Use user_id, not id
+        const { data, error } = await db.from("profiles")
+            .select("role, email")
+            .eq("user_id", user.id)
+            .maybeSingle();
+        if (error) {
+            console.warn("Could not read profile role:", error.message);
+            return "customer";
+        }
+        return (data && data.role) ? data.role : "customer";
+    } catch (error) {
+        console.warn("Error in getProfileRole:", error);
+        return "customer";
+    }
+}
+
+// =============================================
+// AUTH FUNCTIONS
+// =============================================
+function hideAuthBoxes() {
+    document.getElementById("loginBox")?.classList.add("hidden");
+    document.getElementById("registerBox")?.classList.add("hidden");
+    document.getElementById("forgotPasswordBox")?.classList.add("hidden");
+    document.getElementById("passwordResetBox")?.classList.add("hidden");
+}
+
+function showLogin() {
+    hideAuthBoxes();
+    document.getElementById("loginBox")?.classList.remove("hidden");
+}
+
+function showRegister() {
+    hideAuthBoxes();
+    document.getElementById("registerBox")?.classList.remove("hidden");
+}
+
+function showForgotPassword() {
+    hideAuthBoxes();
+    document.getElementById("forgotPasswordBox")?.classList.remove("hidden");
+}
+
+function toggleLoginPrivacyNotice() {
+    const box = document.getElementById("loginPrivacyNoticeBox");
+    if (box) box.classList.toggle("hidden");
+}
+
+function togglePrivacyNotice() {
+    const content = document.getElementById("privacyNoticeContent");
+    const icon = document.getElementById("privacyNoticeIcon");
+    if (!content) return;
+    content.classList.toggle("hidden");
+    if (icon) icon.textContent = content.classList.contains("hidden") ? "▶" : "▼";
+}
+
+function showLoggedOut() {
+    currentUser = null;
+    document.getElementById("loginSection")?.classList.remove("hidden");
+    document.getElementById("customerSection")?.classList.add("hidden");
+    document.getElementById("stationerySection")?.classList.add("hidden");
+    document.getElementById("wallArtSection")?.classList.add("hidden");
+    document.getElementById("adminSection")?.classList.add("hidden");
+    document.getElementById("topActions")?.classList.add("hidden");
+    showLogin();
+}
+
+function showLoggedInShell(user) {
+    document.getElementById("loginSection")?.classList.add("hidden");
+    document.getElementById("topActions")?.classList.remove("hidden");
+    const loggedInText = document.getElementById("loggedInText");
+    if (loggedInText) loggedInText.textContent = (user.name || user.email) + " (" + user.role + ")";
+}
+
+async function registerUser() {
+    const terms = document.getElementById("regAcceptTerms");
+    if (terms && !terms.checked) {
+        alert("Please accept the LiTaLink™ Privacy Notice and user responsibility terms before creating an account.");
+        return;
+    }
+    const name = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim().toLowerCase();
+    const phone = document.getElementById("regPhone").value.trim();
+    const password = document.getElementById("regPassword").value;
+    if (!name || !email || !phone || !password) { alert("Complete all fields."); return; }
+    if (password.length < 6) { alert("Password must be at least 6 characters."); return; }
+    if (!requireSupabase()) return;
+    const signup = await db.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { terms_accepted: true, terms_version: "2026-06-04", terms_accepted_at: new Date().toISOString(), name, phone, role: "customer" },
+            emailRedirectTo: getCleanRedirectUrl()
+        }
+    });
+    if (signup.error) { alert("Could not register account: " + signup.error.message); return; }
+    const authUser = signup.data && signup.data.user ? signup.data.user : null;
+    if (authUser) {
+        await db.from("customers").insert({ user_id: authUser.id, name, email, phone });
+    }
+    document.getElementById("loginEmail").value = email;
+    document.getElementById("loginPassword").value = "";
+    showLogin();
+    alert("Account registered.");
+}
+
+async function login() {
+    const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+    const password = document.getElementById("loginPassword").value;
+    if (!email || !password) { alert("Enter email and password."); return; }
+    if (!requireSupabase()) return;
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if (error) { alert("Incorrect email or password."); return; }
+    currentUser = await buildCurrentUserFromSession();
+    if (!currentUser) { alert("Login worked, but no customer/admin profile could be loaded."); return; }
+    await openAppForCurrentUser();
+}
+
+async function logout() {
+    await stopRealtimeUpdates();
+    if (db) await db.auth.signOut();
+    showLoggedOut();
+}
+
+async function sendPasswordReset() {
+    if (!requireSupabase()) return;
+    const email = document.getElementById("resetEmail").value.trim().toLowerCase();
+    if (!email) { alert("Enter your email address."); return; }
+    const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: getCleanRedirectUrl() });
+    if (error) { alert("Could not send reset link. Make sure this email is registered."); return; }
+    alert("If this email is registered, a password reset link has been sent.");
+    showLogin();
+}
+
+async function updatePassword() {
+    if (!requireSupabase()) return;
+    const password = document.getElementById("newPassword").value;
+    if (!password || password.length < 6) { alert("Password must be at least 6 characters."); return; }
+    const { data: sessionData } = await db.auth.getSession();
+    if (!sessionData || !sessionData.session) { alert("Your reset link expired. Please request a new reset link."); showForgotPassword(); return; }
+    const { error } = await db.auth.updateUser({ password });
+    if (error) { alert("Could not update password. Please request a new reset link and try again."); return; }
+    alert("Password updated. You can now login.");
+    await db.auth.signOut();
+    window.history.replaceState({}, document.title, getCleanRedirectUrl());
+    showLogin();
+}
+
+async function checkPasswordRecovery() {
+    if (!db) return false;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+        const { error } = await db.auth.exchangeCodeForSession(code);
+        if (error) { alert("Password reset link is invalid or expired."); window.history.replaceState({}, document.title, getCleanRedirectUrl()); showForgotPassword(); return true; }
+    }
+    const { data } = await db.auth.getSession();
+    const isRecovery = window.location.hash.includes("type=recovery") || window.location.search.includes("type=recovery") || !!code;
+    if (data && data.session && isRecovery) {
+        document.getElementById("loginSection")?.classList.remove("hidden");
+        document.getElementById("customerSection")?.classList.add("hidden");
+        document.getElementById("adminSection")?.classList.add("hidden");
+        document.getElementById("topActions")?.classList.add("hidden");
+        hideAuthBoxes();
+        document.getElementById("passwordResetBox")?.classList.remove("hidden");
+        return true;
+    }
+    return false;
+}
+
+async function getCurrentCustomerProfile() {
+    if (!db) return null;
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return null;
+    let { data, error } = await db.from("customers").select("*").eq("user_id", user.id).maybeSingle();
+    if (error) { console.warn("Could not read customer profile:", error.message); return null; }
+    if (data) return data;
+    const meta = user.user_metadata || {};
+    const email = (user.email || "").toLowerCase();
+    const cleanName = (meta.name || email.split("@")[0] || "Customer").trim();
+    const cleanPhone = (meta.phone || "").trim();
+    const profile = { user_id: user.id, email, name: cleanName, phone: cleanPhone };
+    const insert = await db.from("customers").insert(profile).select("*").single();
+    if (insert.error) { console.warn("Could not auto-create customer profile:", insert.error.message); return null; }
+    return insert.data;
+}
+
+async function buildCurrentUserFromSession() {
+    if (!db) return null;
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return null;
+    const role = await getProfileRole();
+    if (role === "admin") {
+        return { email: user.email, role: "admin", name: "Admin", phone: "", userId: user.id };
+    }
+    const customerProfile = await getCurrentCustomerProfile();
+    if (!customerProfile) return null;
+    return {
+        id: customerProfile.id,
+        userId: customerProfile.user_id,
+        email: customerProfile.email,
+        role: "customer",
+        name: customerProfile.name,
+        phone: customerProfile.phone || ""
+    };
+}
+
+// =============================================
+// DATA LOADING FUNCTIONS
+// =============================================
+function mapOrderFromDb(o) {
+    return {
+        orderNo: o.order_no,
+        userEmail: o.user_email,
+        customerName: o.customer_name,
+        customerPhone: o.customer_phone,
+        fileName: o.file_name,
+        filePath: o.file_path || "",
+        pages: o.pages,
+        printType: o.print_type,
+        rate: o.rate,
+        printCost: o.print_cost,
+        laminationTotal: o.lamination_total || 0,
+        laminationDetails: o.lamination_details || [],
+        deliveryArea: o.delivery_area,
+        deliveryTime: o.delivery_time,
+        deliveryFee: o.delivery_fee,
+        total: o.total,
+        notes: o.notes || "",
+        paymentMethod: o.payment_method || "Pay on Delivery",
+        paymentStatus: o.payment_status || "Pending",
+        paymentProofPath: o.payment_proof_path || "",
+        deliveryStatus: o.delivery_status || "Not Dispatched",
+        stockDeducted: o.stock_deducted || false,
+        rating: o.rating || 0,
+        review: o.review || "",
+        status: o.status,
+        date: o.order_date || new Date(o.created_at).toLocaleString()
+    };
+}
+
+function mapStationeryFromDb(i) {
+    return {
+        id: i.id,
+        name: i.name,
+        categoryId: i.category_id || "",
+        subtopic: i.subtopic || "",
+        imageUrl: i.image_url || "",
+        imagePath: i.image_path || "",
+        price: Number(i.price || 0),
+        active: i.active !== false,
+        date: i.created_at || ""
+    };
+}
+
+function mapStationeryOrderFromDb(o) {
+    return {
+        orderNo: o.order_no,
+        userEmail: o.user_email,
+        customerName: o.customer_name,
+        customerPhone: o.customer_phone || "",
+        items: o.items || [],
+        total: Number(o.total || 0),
+        status: o.status || "Pending",
+        date: o.created_at ? new Date(o.created_at).toLocaleString() : ""
+    };
+}
+
+function mapWallArtFromDb(i) {
+    return {
+        id: i.id,
+        name: i.name,
+        categoryId: i.category_id || "",
+        subtopic: i.subtopic || "",
+        imageUrl: i.image_url || "",
+        imagePath: i.image_path || "",
+        price: Number(i.price || 0),
+        active: i.active !== false,
+        date: i.created_at || ""
+    };
+}
+
+function mapWallArtOrderFromDb(o) {
+    return {
+        orderNo: o.order_no,
+        userEmail: o.user_email,
+        customerName: o.customer_name,
+        customerPhone: o.customer_phone || "",
+        items: o.items || [],
+        total: Number(o.total || 0),
+        status: o.status || "Pending",
+        date: o.created_at ? new Date(o.created_at).toLocaleString() : ""
+    };
+}
+
+function getCategoryName(categoryId) {
+    const cat = stationeryCategories.find(c => String(c.id) === String(categoryId));
+    return cat ? cat.name : "";
+}
+
+function getWallArtCategoryName(categoryId) {
+    const cat = wallArtCategories.find(c => String(c.id) === String(categoryId));
+    return cat ? cat.name : "";
+}
+
+async function loadData() {
+    if (!db) return;
+    try {
+        const [customersRes, ordersRes, areasRes, auditRes, stockRes, priceRes, stationeryRes, stationeryOrdersRes, stationeryCategoriesRes, wallArtItemsRes, wallArtOrdersRes, wallArtCategoriesRes] = await Promise.all([
+            db.from("customers").select("*").order("created_at", { ascending: true }),
+            db.from("print_orders").select("*").order("created_at", { ascending: false }),
+            db.from("delivery_areas").select("*").order("name", { ascending: true }),
+            db.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100),
+            db.from("app_settings").select("*").eq("key", "stock").maybeSingle(),
+            db.from("app_settings").select("*").eq("key", "printing_prices").maybeSingle(),
+            db.from("stationery_items").select("*").order("created_at", { ascending: false }),
+            db.from("stationery_orders").select("*").order("created_at", { ascending: false }),
+            db.from("stationery_categories").select("*").order("name", { ascending: true }),
+            db.from("wall_art_items").select("*").order("created_at", { ascending: false }),
+            db.from("wall_art_orders").select("*").order("created_at", { ascending: false }),
+            db.from("wall_art_categories").select("*").order("name", { ascending: true })
+        ]);
+        customerUsers = (customersRes.data || []).map(u => ({ id: u.id || null, userId: u.user_id || null, email: u.email, role: "customer", name: u.name, phone: u.phone || "" }));
+        orders = (ordersRes.data || []).map(mapOrderFromDb);
+        deliveryAreas = (areasRes.data || []).map(a => a.name);
+        auditLogs = (auditRes.data || []).map(a => ({ date: new Date(a.created_at).toLocaleString(), orderNo: a.order_no, action: a.action, user: a.user_email }));
+        stock = (stockRes.data && stockRes.data.value) ? stockRes.data.value : { paper: 0, ink: 0 };
+        printingPrices = { ...defaultPrintingPrices, ...((priceRes.data && priceRes.data.value) ? priceRes.data.value : {}) };
+        stationeryItems = (stationeryRes.data || []).map(mapStationeryFromDb);
+        stationeryOrders = (stationeryOrdersRes.data || []).map(mapStationeryOrderFromDb);
+        stationeryCategories = (stationeryCategoriesRes.data || []).map(c => ({ id: c.id, name: c.name }));
+        wallArtItems = (wallArtItemsRes.data || []).map(mapWallArtFromDb);
+        wallArtOrders = (wallArtOrdersRes.data || []).map(mapWallArtOrderFromDb);
+        wallArtCategories = (wallArtCategoriesRes.data || []).map(c => ({ id: c.id, name: c.name }));
+        if (!deliveryAreas.length) {
+            deliveryAreas = ["Uniciti", "Cambridge", "Kingswood"];
+            for (const name of deliveryAreas) await db.from("delivery_areas").insert({ name });
+        }
+        console.log('✅ Data loaded:', orders.length, 'orders');
+    } catch (error) {
+        console.error('❌ Error loading data:', error);
+    }
+}
+
+function renderCurrentView() {
+    renderDeliveryAreas();
+    renderStock();
+    renderAuditLog();
+    renderAnalytics();
+    renderStationeryCategories();
+
+    if (currentUser && currentUser.role === "admin") {
+        renderAdminOrders();
+        renderAdminStationery();
+        renderAdminStationeryOrders();
+        renderWallArtCategories();
+        renderAdminWallArt();
+        renderAdminWallArtOrders();
+    }
+
+    if (currentUser && currentUser.role === "customer") {
+        renderCustomerOrders();
+        renderStationeryCustomer();
+        renderCustomerStationeryOrders();
+        renderWallArtCustomer();
+        renderCustomerWallArtOrders();
+    }
+}
+
+// =============================================
+// UPDATE FUNCTIONS
+// =============================================
+function updatePricingDisplay() {
+    const bw = Number(printingPrices.bw || 0);
+    const colour = Number(printingPrices.colour || 0);
+    const lamination = Number(printingPrices.lamination || 10);
+    const deliveryFee = Number(printingPrices.deliveryFee || 0);
+    const freeMin = Number(printingPrices.freeDeliveryMinimum || 0);
+    const printType = document.getElementById("printType");
+    if (printType) {
+        const old = printType.value || "bw";
+        printType.innerHTML = `<option value="bw">Black & White - R${bw} per page</option><option value="colour">Colour - R${colour} per page</option>`;
+        printType.value = old;
+    }
+    const pricingCard = document.getElementById("customerPricingBox");
+    if (pricingCard) {
+        pricingCard.innerHTML = `
+            <h3>Pricing</h3>
+            <p><b>Black & White:</b> R${bw} per page</p>
+            <p><b>Colour:</b> R${colour} per page</p>
+            <p><b>Lamination:</b> R${lamination} per page</p>
+            <p><b>Delivery fee:</b> R${deliveryFee}</p>
+            <p><b>Free delivery:</b> When printing cost is R${freeMin} or more</p>
+            <div id="dailyNoticeContainer" class="daily-notice-container">
+                <h4>📢 Daily Notice</h4>
+                <div id="dailyNoticeContent" class="daily-notice-content">
+                    <div class="daily-notice-empty">No daily notice posted today.</div>
+                </div>
+                <div id="dailyNoticeAdminActions" class="daily-notice-admin-actions hidden">
+                    <button class="btn-small btn-green" onclick="uploadDailyNotice()">📤 Upload</button>
+                    <button class="btn-small btn-red" onclick="clearDailyNotice()">🗑️ Clear</button>
+                </div>
+            </div>
+        `;
+        renderDailyNotice();
+    }
+    const ids = { priceBw: bw, priceColour: colour, priceLamination: lamination, priceDeliveryFee: deliveryFee, priceFreeDeliveryMinimum: freeMin };
+    Object.entries(ids).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    });
+    const status = document.getElementById("printingPriceStatus");
+    if (status) {
+        status.innerHTML = `
+            <h4>Current Printing Prices</h4>
+            <p><b>Black & White:</b> R${bw} per page</p>
+            <p><b>Colour:</b> R${colour} per page</p>
+            <p><b>Lamination:</b> R${lamination} per page</p>
+            <p><b>Delivery fee:</b> R${deliveryFee}</p>
+            <p><b>Free delivery from:</b> R${freeMin} printing cost</p>
+        `;
+    }
+}
+
+function updateCustomerPricingDisplay() {
+    const printType = document.getElementById("printType");
+    const currentValue = printType ? printType.value : "bw";
+    if (printType) {
+        printType.innerHTML = `
+            <option value="bw">Black & White - R${formatRand(printingPrices.bw)} per page</option>
+            <option value="colour">Colour - R${formatRand(printingPrices.colour)} per page</option>
+        `;
+        printType.value = currentValue || "bw";
+    }
+    const pricing = document.getElementById("customerPricingBox");
+    if (pricing) {
+        pricing.innerHTML = `
+            <h3>Pricing</h3>
+            <p><b>Black & White:</b> R${formatRand(printingPrices.bw)} per page</p>
+            <p><b>Colour:</b> R${formatRand(printingPrices.colour)} per page</p>
+            <p><b>Lamination:</b> R${formatRand(printingPrices.lamination)} per page</p>
+            <p><b>Delivery fee:</b> R${formatRand(printingPrices.deliveryFee)}</p>
+            <p><b>Free delivery:</b> When printing cost is R${formatRand(printingPrices.freeDeliveryMinimum)} or more</p>
+        `;
+        const noticeContainer = document.createElement("div");
+        noticeContainer.id = "dailyNoticeContainer";
+        noticeContainer.className = "daily-notice-container";
+        noticeContainer.innerHTML = `
+            <h4>📢 Daily Notice</h4>
+            <div id="dailyNoticeContent" class="daily-notice-content">
+                <div class="daily-notice-empty">No daily notice posted today.</div>
+            </div>
+            <div id="dailyNoticeAdminActions" class="daily-notice-admin-actions hidden">
+                <button class="btn-small btn-green" onclick="uploadDailyNotice()">📤 Upload</button>
+                <button class="btn-small btn-red" onclick="clearDailyNotice()">🗑️ Clear</button>
+            </div>
+        `;
+        pricing.appendChild(noticeContainer);
+        renderDailyNotice();
+    }
+}
+
+function updateDeliveryTimes() {
+    const select = document.getElementById("deliveryTime");
+    if (!select) return;
+    const now = new Date();
+    Array.from(select.options).forEach(opt => {
+        if (!opt.value) return;
+        const [h, m] = opt.value.split(":").map(Number);
+        const slot = new Date();
+        slot.setHours(h, m, 0, 0);
+        const passed = slot < now;
+        opt.disabled = passed;
+        opt.className = passed ? "time-disabled" : "";
+        opt.textContent = passed ? opt.value + " - passed today" : opt.value;
+    });
+}
+
+// =============================================
+// RENDER FUNCTIONS
+// =============================================
+function renderDeliveryAreas() {
+    const customerSelect = document.getElementById("deliveryArea");
+    if (customerSelect) {
+        customerSelect.innerHTML = '<option value="">Choose delivery area</option>';
+        deliveryAreas.forEach(area => {
+            customerSelect.innerHTML += `<option value="${escapeHtml(area)}">${escapeHtml(area)}</option>`;
+        });
+    }
+    const list = document.getElementById("deliveryAreaList");
+    if (list) {
+        list.innerHTML = "";
+        deliveryAreas.forEach(area => {
+            const safe = escapeHtml(area);
+            list.innerHTML += `<div class="area-row"><strong>${safe}</strong><button class="btn-small btn-red" onclick="removeDeliveryArea('${safe.replace(/'/g, "\\'")}')">Remove</button></div>`;
+        });
+    }
+}
+
+function renderStock() {
+    const p = document.getElementById("paperStock");
+    const i = document.getElementById("inkStock");
+    const s = document.getElementById("stockStatus");
+    if (p) p.value = stock.paper || 0;
+    if (i) i.value = stock.ink || 0;
+    if (s) {
+        const pendingPages = orders.filter(o => o.status === "Pending" || o.status === "Printing")
+            .reduce((sum, o) => sum + (o.stockDeducted ? 0 : Number(o.pages || 0)), 0);
+        s.innerHTML = `
+            <h4>Current Stock</h4>
+            <p><b>Paper sheets:</b> ${stock.paper || 0}</p>
+            <p><b>Sheets needed for active orders:</b> ${pendingPages}</p>
+            <p><b>Ink/Toner:</b> ${stock.ink || 0}%</p>
+            ${(stock.paper || 0) < pendingPages ? '<p class="notice">Warning: paper stock is lower than active order pages.</p>' : ''}
+            ${(stock.paper || 0) < 20 ? '<p class="notice">Paper stock is low.</p>' : ''}
+            ${(stock.ink || 0) < 20 ? '<p class="notice">Ink/Toner is low.</p>' : ''}
+        `;
+    }
+}
+
+function renderAuditLog() {
+    const box = document.getElementById("auditLogBody");
+    if (!box) return;
+    if (!auditLogs.length) {
+        box.innerHTML = '<div class="audit-empty">No audit activity yet.</div>';
+        return;
+    }
+    box.innerHTML = "";
+    auditLogs.slice(0, 50).forEach(a => {
+        const order = a.orderNo || "System";
+        box.innerHTML += `
+            <div class="audit-item">
+                <div class="audit-date">${escapeHtml(a.date)}</div>
+                <div>
+                    <div class="audit-action">${escapeHtml(a.action)}</div>
+                    <div class="audit-meta">By ${escapeHtml(a.user || "system")}</div>
+                </div>
+                <div class="audit-order">${escapeHtml(order)}</div>
+            </div>
+        `;
+    });
+}
+
+function renderAnalytics() {
+    const box = document.getElementById("analyticsCards");
+    if (!box) return;
+    const today = orders.filter(o => String(o.date || "").includes(new Date().getFullYear()) && new Date(o.date).toDateString() === new Date().toDateString()).length;
+    const colour = orders.filter(o => o.printType === "colour").length;
+    const bw = orders.filter(o => o.printType === "bw").length;
+    const ready = orders.filter(o => o.status === "Ready" || o.status === "Delivered").length;
+    const cancelled = orders.filter(o => o.status === "Cancelled").length;
+    const avg = orders.length ? Math.round(orders.reduce((s, o) => s + Number(o.total || 0), 0) / orders.length) : 0;
+    const topAreas = {};
+    orders.forEach(o => topAreas[o.deliveryArea] = (topAreas[o.deliveryArea] || 0) + 1);
+    const topArea = Object.entries(topAreas).sort((a, b) => b[1] - a[1])[0];
+    box.innerHTML = `
+        <div class="mini-card"><b>Average order</b><div>R${avg}</div></div>
+        <div class="mini-card"><b>Colour orders</b><div>${colour}</div></div>
+        <div class="mini-card"><b>B&W orders</b><div>${bw}</div></div>
+        <div class="mini-card"><b>Completed</b><div>${ready}</div></div>
+        <div class="mini-card"><b>Cancelled</b><div>${cancelled}</div></div>
+        <div class="mini-card"><b>Top area</b><div>${topArea ? topArea[0] + " (" + topArea[1] + ")" : "None"}</div></div>
+    `;
+    const todayEl = document.getElementById("todayOrders");
+    if (todayEl) todayEl.textContent = today;
+}
+
+function renderDeliveryQueue() {
+    const boxes = [...document.querySelectorAll("#deliveryQueueCards,#deliveryQueueCardsDeliveries")];
+    if (!boxes.length) return;
+    const box = document.createElement("div");
+    const slots = ["07:00", "12:00", "17:00", "23:00"];
+    const active = orders.filter(o => ["Pending", "Printing", "Ready"].includes(o.status));
+    box.innerHTML = "";
+    slots.forEach(slot => {
+        const slotOrders = active.filter(o => String(o.deliveryTime || "") === slot);
+        const overdue = slotOrders.filter(o => isDeliveryOverdue(o.deliveryTime, o.status)).length;
+        box.innerHTML += `
+            <div class="delivery-queue-card">
+                <div class="delivery-queue-title">Pending before ${slot}</div>
+                <div class="delivery-queue-count">${slotOrders.length}</div>
+                <div class="delivery-queue-meta">${overdue ? overdue + " overdue" : "On schedule"}</div>
+            </div>
+        `;
+    });
+    const noTime = active.filter(o => !o.deliveryTime).length;
+    if (noTime) {
+        box.innerHTML += `
+            <div class="delivery-queue-card">
+                <div class="delivery-queue-title">No delivery time</div>
+                <div class="delivery-queue-count">${noTime}</div>
+                <div class="delivery-queue-meta">Needs attention</div>
+            </div>
+        `;
+    }
+}
+
+// =============================================
+// ADMIN ORDER FUNCTIONS
+// =============================================
+function renderAdminOrders() {
+    const tbody = document.getElementById("adminOrders");
+    if (!tbody) return;
+    let visibleOrders = [...orders];
+    const q = (document.getElementById("adminSearch")?.value || "").toLowerCase();
+    const sf = document.getElementById("statusFilter")?.value || "";
+    if (q) { visibleOrders = visibleOrders.filter(o => [o.orderNo, o.customerName, o.customerPhone, o.fileName, o.deliveryArea, o.userEmail].join(" ").toLowerCase().includes(q)); }
+    if (sf) { visibleOrders = visibleOrders.filter(o => o.status === sf); }
+    
+    if (!visibleOrders.length) {
+        tbody.innerHTML = '<tr><td colspan="13">No orders found.</td></tr>';
+    } else {
+        tbody.innerHTML = "";
+        visibleOrders.forEach(order => {
+            const laminationText = order.laminationTotal && order.laminationTotal > 0 ? `✅ R${order.laminationTotal}` : "❌ No";
+            tbody.innerHTML += `<tr><td>${order.orderNo}</td><td>${order.customerName}</td><td>${order.customerPhone}</td><td>${buildOrderFilesHtml(order)}</td><td>${order.pages}</td><td>${typeLabel(order.printType)}</td><td>${laminationText}</td><td>${order.deliveryArea}<br>${order.deliveryTime}<br>${deliveryBadgeHtml(order)}<br>Fee: ${Number(order.deliveryFee) === 0 ? "FREE" : "R" + order.deliveryFee}</td><td>${order.paymentMethod || "Pay on Delivery"}<br><b>${order.paymentStatus || "Pending"}</b></td><td>${order.deliveryStatus || "Not Dispatched"}<br><button class="btn-small" onclick="changeDeliveryStatus('${order.orderNo}','Out for Delivery')">Out</button><button class="btn-small btn-green" onclick="changeDeliveryStatus('${order.orderNo}','Delivered')">Done</button></td><td>R${order.total}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span>${order.rating ? `<br>⭐ ${order.rating}/5` : ""}</td><td><div class="admin-action-menu" id="adminMenu_${order.orderNo}">
+            <button type="button" class="btn-small admin-action-btn" onclick="event.stopPropagation();toggleAdminMenu('adminMenu_${order.orderNo}')">Actions ▼</button>
+            <div class="admin-action-dropdown">
+                <button type="button" onclick="changeStatus('${order.orderNo}','Printing')">Mark Printing</button>
+                <button type="button" onclick="changeStatus('${order.orderNo}','Ready')">Mark Ready</button>
+                <button type="button" onclick="changeStatus('${order.orderNo}','Delivered')">Mark Delivered</button>
+                <button type="button" onclick="changeStatus('${order.orderNo}','Cancelled')">Cancel Order</button>
+                ${order.filePath ? `<button type="button" onclick="previewOrderFile('${order.orderNo}')">Preview Files</button><button type="button" onclick="downloadOrderFile('${order.orderNo}')">Download ZIP</button>` : ""}
+                <button type="button" onclick="downloadInvoice('${order.orderNo}')">Invoice</button>
+            </div>
+        </div></td></tr>`;
+        });
+    }
+    
+    const totalOrders = document.getElementById("totalOrders");
+    const totalMoney = document.getElementById("totalMoney");
+    const pendingOrders = document.getElementById("pendingOrders");
+    if (totalOrders) totalOrders.textContent = orders.length;
+    if (totalMoney) totalMoney.textContent = "R" + orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    if (pendingOrders) pendingOrders.textContent = orders.filter(o => o.status === "Pending").length;
+    
+    renderAnalytics();
+    renderDeliveryQueue();
+    renderPendingInvoiceZipCards();
+    renderStock();
+    renderAuditLog();
+}
+
+function toggleAdminMenu(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("open");
+}
+
+function showAdminTab(name, btn) {
+    document.querySelectorAll('.admin-tab-panel').forEach(panel => panel.classList.add('hidden'));
+    const active = document.getElementById('adminTab_' + name);
+    if (active) active.classList.remove('hidden');
+    document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+}
+
+function toggleAdminSection(id) {
+    const el = document.getElementById(id);
+    const icon = document.getElementById(id + 'Icon');
+    if (!el) return;
+    el.classList.toggle('hidden');
+    if (icon) icon.textContent = el.classList.contains('hidden') ? '▶' : '▼';
+}
+
+// =============================================
+// SAVE FUNCTIONS WITH INSTANT REFRESH
+// =============================================
+async function savePrintingPrices() {
+    if (!currentUser || currentUser.role !== "admin") {
+        alert("Only admin can change printing prices.");
+        return;
+    }
+    const bw = Number(document.getElementById("priceBw").value);
+    const colour = Number(document.getElementById("priceColour").value);
+    const lamination = Number(document.getElementById("priceLamination").value);
+    const deliveryFee = Number(document.getElementById("priceDeliveryFee").value);
+    const freeDeliveryMinimum = Number(document.getElementById("priceFreeDeliveryMinimum").value);
+    if ([bw, colour, lamination, deliveryFee, freeDeliveryMinimum].some(v => Number.isNaN(v) || v < 0)) {
+        alert("Enter valid prices. Values cannot be negative.");
+        return;
+    }
+    printingPrices = { bw, colour, lamination, deliveryFee, freeDeliveryMinimum };
+    if (db) {
+        const { error } = await db.from("app_settings").upsert({ key: "printing_prices", value: printingPrices });
+        if (error) {
+            alert("Failed to save prices: " + error.message);
+            return;
+        }
+    }
+    forceRefreshUI();
+    await logAudit("System", "Printing prices updated");
+    alert("✅ Printing prices updated successfully!");
+}
+
+async function saveStock() {
+    stock.paper = Number(document.getElementById("paperStock").value) || 0;
+    stock.ink = Number(document.getElementById("inkStock").value) || 0;
+    if (db) {
+        await db.from("app_settings").upsert({ key: "stock", value: stock });
+    }
+    renderStock();
+    forceRefreshUI();
+    alert("✅ Stock updated successfully!");
+}
+
+// =============================================
+// OPEN APP FOR CURRENT USER
+// =============================================
+async function openAppForCurrentUser() {
+    if (!currentUser) return;
+    await loadData();
+    showLoggedInShell(currentUser);
+    renderDeliveryAreas();
+    updatePricingDisplay();
+    updateDeliveryTimes();
+    calculatePrice();
+    renderStock();
+    renderAuditLog();
+    loadDailyNotice();
+    await restartRealtimeUpdates();
+    
+    if (currentUser.role === "admin") {
+        document.getElementById("adminSection")?.classList.remove("hidden");
+        document.getElementById("customerSection")?.classList.add("hidden");
+        document.getElementById("stationerySection")?.classList.add("hidden");
+        document.getElementById("wallArtSection")?.classList.add("hidden");
+        renderAdminOrders();
+        renderAnalytics();
+        renderDeliveryQueue();
+        renderPendingInvoiceZipCards();
+        renderStationeryCategories();
+        renderAdminStationery();
+        renderAdminStationeryOrders();
+        renderWallArtCategories();
+        renderAdminWallArt();
+        renderAdminWallArtOrders();
+    } else {
+        document.getElementById("customerSection")?.classList.remove("hidden");
+        document.getElementById("adminSection")?.classList.add("hidden");
+        document.getElementById("stationerySection")?.classList.add("hidden");
+        document.getElementById("wallArtSection")?.classList.add("hidden");
+        const customerName = document.getElementById("customerName");
+        const customerPhone = document.getElementById("customerPhone");
+        if (customerName) customerName.value = currentUser.name || "";
+        if (customerPhone) customerPhone.value = currentUser.phone || "";
+        renderCustomerOrders();
+        renderStationeryCategories();
+        renderStationeryCustomer();
+        renderCustomerStationeryOrders();
+        renderWallArtCategories();
+        renderWallArtCustomer();
+        renderCustomerWallArtOrders();
+    }
+    renderDailyNotice();
+    forceRefreshUI();
+}
+
+// =============================================
+// PLACEHOLDER FUNCTIONS (Keep your existing code)
+// =============================================
+function renderCustomerOrders() {
+    // Your existing renderCustomerOrders function
+}
+
+function renderStationeryCustomer() {
+    // Your existing renderStationeryCustomer function
+}
+
+function renderCustomerStationeryOrders() {
+    // Your existing renderCustomerStationeryOrders function
+}
+
+function renderAdminStationery() {
+    // Your existing renderAdminStationery function
+}
+
+function renderAdminStationeryOrders() {
+    // Your existing renderAdminStationeryOrders function
+}
+
+function renderStationeryCategories() {
+    // Your existing renderStationeryCategories function
+}
+
+function renderWallArtCustomer() {
+    // Your existing renderWallArtCustomer function
+}
+
+function renderCustomerWallArtOrders() {
+    // Your existing renderCustomerWallArtOrders function
+}
+
+function renderAdminWallArt() {
+    // Your existing renderAdminWallArt function
+}
+
+function renderAdminWallArtOrders() {
+    // Your existing renderAdminWallArtOrders function
+}
+
+function renderWallArtCategories() {
+    // Your existing renderWallArtCategories function
+}
+
+function renderPendingInvoiceZipCards() {
+    // Your existing renderPendingInvoiceZipCards function
+}
+
+function downloadDeliveryLabelsByTime(time) {
+    // Your existing downloadDeliveryLabelsByTime function
+}
+
+function exportOrdersCSV() {
+    // Your existing exportOrdersCSV function
+}
+
+function calculatePrice() {
+    // Your existing calculatePrice function
+}
+
+async function logAudit(orderNo, action) {
+    const item = { date: new Date().toLocaleString(), orderNo, action, user: currentUser ? currentUser.email : "system" };
+    auditLogs.unshift(item);
+    auditLogs = auditLogs.slice(0, 100);
+    if (db) { await db.from("audit_logs").insert({ order_no: orderNo, action, user_email: item.user }); }
+    renderAuditLog();
+}
+
+async function addDeliveryArea() {
+    if (!currentUser || currentUser.role !== "admin") return;
+    const input = document.getElementById("newDeliveryArea");
+    const area = input.value.trim();
+    if (!area) { alert("Please enter a delivery place."); return; }
+    if (deliveryAreas.map(a => a.toLowerCase()).includes(area.toLowerCase())) { alert("This delivery place already exists."); return; }
+    if (db) {
+        const { error } = await db.from("delivery_areas").insert({ name: area });
+        if (error) { alert("Could not add delivery place."); return; }
+    }
+    deliveryAreas.push(area);
+    input.value = "";
+    renderDeliveryAreas();
+    forceRefreshUI();
+}
+
+async function removeDeliveryArea(area) {
+    if (!currentUser || currentUser.role !== "admin") return;
+    if (!confirm("Remove " + area + " from delivery places?")) return;
+    if (db) await db.from("delivery_areas").delete().eq("name", area);
+    deliveryAreas = deliveryAreas.filter(a => a !== area);
+    renderDeliveryAreas();
+    forceRefreshUI();
+}
+
+function buildInvoice(order) {
+    // Your existing buildInvoice function
+}
+
+function downloadInvoice(orderNo) {
+    // Your existing downloadInvoice function
+}
+
+// =============================================
+// STATIONERY FUNCTIONS (Keep your existing code)
+// =============================================
+// All your existing stationery functions go here
+
+// =============================================
+// WALL ART FUNCTIONS (Keep your existing code)
+// =============================================
+// All your existing wall art functions go here
+
+// =============================================
+// ORDER FILE FUNCTIONS (Keep your existing code)
+// =============================================
+// All your existing order file functions go here
+
+// =============================================
+// REALTIME UPDATES
+// =============================================
+let realtimeRefreshTimer = null;
+let realtimeBusy = false;
+
+async function refreshAllData() {
+    if (realtimeBusy) return;
+    realtimeBusy = true;
+    try {
+        await loadData();
+        renderCurrentView();
+    } catch (error) {
+        console.error("Realtime refresh failed:", error);
+    } finally {
+        realtimeBusy = false;
+    }
+}
+
+function queueRealtimeRefresh() {
+    clearTimeout(realtimeRefreshTimer);
+    realtimeRefreshTimer = setTimeout(refreshAllData, 250);
+}
+
+async function stopRealtimeUpdates() {
+    if (db && realtimeChannel) {
+        await db.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+    }
+}
+
+async function restartRealtimeUpdates() {
+    await stopRealtimeUpdates();
+    startRealtimeUpdates();
+}
+
+function startRealtimeUpdates() {
+    if (!db || realtimeChannel) return;
+    const tables = ["print_orders", "delivery_areas", "audit_logs", "app_settings", "stationery_items", "stationery_categories", "stationery_orders", "wall_art_items", "wall_art_categories", "wall_art_orders"];
+    realtimeChannel = db.channel("litalink-live-updates");
+    tables.forEach(table => {
+        realtimeChannel.on("postgres_changes", { event: "*", schema: "public", table }, queueRealtimeRefresh);
+    });
+    realtimeChannel.subscribe(status => {
+        if (status === "SUBSCRIBED") {
+            console.log("LiTaLink realtime updates connected.");
+        }
+    });
+}
+
+// =============================================
+// INITIALIZATION
+// =============================================
+document.addEventListener("DOMContentLoaded", function() {
+    const loginPrivacyBtn = document.getElementById("loginPrivacyNoticeBtn");
+    if (loginPrivacyBtn) {
+        loginPrivacyBtn.addEventListener("click", function(event) {
+            event.preventDefault();
+            toggleLoginPrivacyNotice();
+        });
+    }
+    updateDeliveryTimes();
+    calculatePrice();
+});
+
+document.getElementById("deliveryTime")?.addEventListener("change", updateDeliveryTimes);
+document.getElementById("documentFile")?.addEventListener("change", renderFileOptions);
+document.getElementById("printType")?.addEventListener("change", function() {
+    selectedFileDetails.forEach((f, i) => setFilePrintType(i, document.getElementById("printType").value, true));
+    calculatePrice();
+});
+
+// =============================================
+// BOOTSTRAP
+// =============================================
+(async function init() {
+    updatePricingDisplay();
+    updateDeliveryTimes();
+    calculatePrice();
+    const handlingRecovery = await checkPasswordRecovery();
+    if (handlingRecovery) return;
+    if (db) {
+        const { data } = await db.auth.getSession();
+        if (data && data.session) {
+            currentUser = await buildCurrentUserFromSession();
+            if (currentUser) { await openAppForCurrentUser(); return; }
+        }
+    }
+    showLoggedOut();
+})();
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && currentUser) {
+        refreshAllData();
+    }
+});
+</script>
+</body>
+</html>
