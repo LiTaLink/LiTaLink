@@ -1147,6 +1147,7 @@ async function persistAreaUpdate(area){
  return true;
 }
 const maxFileSize=10*1024*1024,storageBucket="order-documents";
+const maxFilePages=20;
 const allowedUploadExtensions=["pdf","jpg","jpeg","png","gif","webp","docx","xlsx","xls"];
 const allowedUploadMimeTypes=["application/pdf","image/jpeg","image/png","image/gif","image/webp","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.ms-excel"];
 const blockedFileNameWords=[];
@@ -3357,6 +3358,15 @@ async function renderFileOptions(){
   try{
    if(!selectedFilePages[key]) selectedFilePages[key]=await autoCountSingleFile(file);
    const pages=selectedFilePages[key];
+
+   if(pages>maxFilePages){
+    alert(displayFileName(file,i)+" has "+pages+" pages, which exceeds the "+maxFilePages+"-page limit per file. Please split it into smaller files or remove it.");
+    selectedFilesStore.splice(i,1);
+    delete selectedFileTypes[key];
+    delete selectedFilePages[key];
+    return renderFileOptions();
+   }
+
    const printType=selectedFileTypes[key] || document.getElementById("printType").value;
    selectedFileTypes[key]=printType;
    const advanced=Object.assign({duplex:false,orientation:"portrait",paperSize:"A4",paperType:"Plain",pageRange:""},selectedFileAdvanced[key]||{});
@@ -3420,7 +3430,7 @@ async function renderFileOptions(){
       ${showPaperType?`<select id="filePaperType_${i}" class="btn-small" style="width:auto;margin:2px" onchange="onFilePaperTypeChange(${i},this.value)" title="Paper type">
         ${paperTypeOptionsHtml(f.paperType)}
       </select>`:""}
-      <input type="text" id="filePageRange_${i}" class="btn-small" style="width:110px;margin:2px" placeholder="Pages e.g. 1-3,5" value="${escapeHtml(f.pageRange||"")}" title="Leave blank to print all pages" onchange="onFilePageRangeChange(${i},this.value)" />
+      <input type="text" id="filePageRange_${i}" class="btn-small" style="width:110px;margin:2px" placeholder="Pages e.g. 1-3,5" value="${escapeHtml(f.pageRange||"")}" title="Leave blank to print all pages" onchange="onFilePageRangeChange(${i},this.value)" oninput="onFilePageRangeChange(${i},this.value)" />
     </div>
   </div>
  `;}).join("");
@@ -3555,21 +3565,48 @@ function onFilePageRangeChange(index,value){
  selectedFileAdvanced[key]=Object.assign({},selectedFileAdvanced[key],{pageRange:clean});
  const el=document.getElementById("filePageRange_"+index);
  if(el&&el.value!==clean)el.value=clean;
+ calculatePrice();
 }
 
+function countPagesInRange(rangeStr,totalDocPages){
+ const total=Math.max(1,Number(totalDocPages)||1);
+ const str=String(rangeStr||"").trim();
+ if(!str)return total;
+ const pageSet=new Set();
+ str.split(",").forEach(part=>{
+  part=part.trim();
+  if(!part)return;
+  if(part.includes("-")){
+   const bounds=part.split("-").map(s=>parseInt(s.trim(),10));
+   const a=bounds[0],b=bounds[1];
+   if(!isNaN(a)&&!isNaN(b)){
+    const start=Math.max(1,Math.min(a,b));
+    const end=Math.min(total,Math.max(a,b));
+    for(let p=start;p<=end;p++)pageSet.add(p);
+   }else if(!isNaN(a)&&a>=1&&a<=total){
+    pageSet.add(a);
+   }
+  }else{
+   const n=parseInt(part,10);
+   if(!isNaN(n)&&n>=1&&n<=total)pageSet.add(n);
+  }
+ });
+ return pageSet.size>0?pageSet.size:total;
+}
 function getFilePrintBreakdown(){
  const files=selectedFilesStore;
  return selectedFileDetails.map((f,i)=>{
   const type=f.printType || document.getElementById("printType").value;
   const rate=type==="bw"?Number(printingPrices.bw):Number(printingPrices.colour);
-  const pages=Number(f.pages||1);
+  const docPages=Number(f.pages||1);
+  const pages=countPagesInRange(f.pageRange,docPages);
   const copies=Number(f.copies||1);
   const totalPages=pages*copies;
   const printCost=totalPages*rate;
   const laminate=!!f.laminate;
   const laminateCost=laminate?totalPages*Number(printingPrices.laminating||0):0;
   const cost=printCost+laminateCost;
-  return {index:i,file:files[i],fileName:f.name,pages,copies,totalPages,printType:type,rate,printCost,laminate,laminateCost,cost,duplex:!!f.duplex,orientation:f.orientation||"portrait",paperSize:f.paperSize||"A4",paperType:f.paperType||"Plain",pageRange:f.pageRange||""};
+  return {index:i,file:files[i],fileName:f.name,docPages,pages,copies,totalPages,printType:type,rate,printCost,laminate,laminateCost,cost,duplex:!!f.duplex,orientation:f.orientation||"portrait",paperSize:f.paperSize||"A4",paperType:f.paperType||"Plain",pageRange:f.pageRange||""};
  });
 }
 
@@ -3631,7 +3668,10 @@ function calculatePrice(){
   }
  }
  const total=Math.max(0,Math.round((subtotal-promoDiscount)*100)/100);
- const detail=breakdown.length?'<br><small>'+breakdown.map(f=>`${escapeHtml(f.fileName)}: ${f.pages} page(s) × ${f.copies||1} cop${(f.copies||1)===1?"y":"ies"}, ${typeLabel(f.printType)}${f.laminate?" + Laminated":""}, R${f.cost}`).join("<br>")+'</small>':"";
+ const detail=breakdown.length?'<br><small>'+breakdown.map(f=>{
+  const pageLabel=f.pageRange?`${f.pages} of ${f.docPages} page(s) selected`:`${f.pages} page(s)`;
+  return `${escapeHtml(f.fileName)}: ${pageLabel} × ${f.copies||1} cop${(f.copies||1)===1?"y":"ies"}, ${typeLabel(f.printType)}${f.laminate?" + Laminated":""}, R${f.cost}`;
+ }).join("<br>")+'</small>':"";
  document.getElementById("priceBox").innerHTML=`Printing cost: R${printCost}<br>Delivery fee: ${deliveryFee===0?"FREE":"R"+deliveryFee}${expressFee>0?" + R"+expressFee.toFixed(2)+" express":""}${primalNote}${expressNote}${promoNote}<br>Final total: R${total.toFixed(2)}${detail}`;
  return{printCost,deliveryFee,expressFee,promoDiscount,promoCode:appliedPromo?appliedPromo.code:"",total,rate};
 }
