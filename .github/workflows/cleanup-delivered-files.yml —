@@ -1,0 +1,22 @@
+name: Cleanup delivered order files
+
+on:
+  schedule:
+    # Runs roughly every 15 minutes. GitHub Actions cron isn't perfectly
+    # punctual (it can be a few minutes late under load), which is fine
+    # here since we only need "eventually, after the 2-hour mark".
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {} # lets you trigger it manually from the Actions tab to test
+
+jobs:
+  call-cleanup-function:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cleanup-delivered-files edge function
+        run: |
+          curl -sS -X POST "https://yfxpeznfjtchtbzbewio.supabase.co/functions/v1/cleanup-delivered-files" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            -d '{}' \
+            --fail-with-body
