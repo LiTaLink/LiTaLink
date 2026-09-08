@@ -1,22 +1,292 @@
-name: Cleanup delivered order files
+// Supabase Edge Function: cleanup-delivered-files
+//
+// Deploy this at: supabase/functions/cleanup-delivered-files/index.ts
+//
+// Runs THREE independent purge rules, one after another:
+//
+//   1. Delivery-age rule (unchanged from the original function): any order
+//      marked "Delivered" more than 2 hours ago, files not yet purged.
+//      Behavior is untouched — it still only clears file_path (keeps the
+//      print_order_files rows and file_name), exactly as before.
+//
+//   2. ID-scan rule (new): the "Scan ID" feature adds a file named
+//      "ID_Card_Scan_<timestamp>.jpg" to an order, alongside whatever else
+//      the customer uploaded. Because that image is sensitive personal
+//      data, it gets deleted 2 hours after delivered_at REGARDLESS of the
+//      order's current status — including orders an admin later reopened
+//      away from "Delivered" (delivered_at stays set once an order has
+//      ever been delivered, so rule 1's status='Delivered' filter would
+//      otherwise miss those). Only that one image is removed — its
+//      storage object and its single print_order_files row — every other
+//      uploaded file in the order is left alone. The order's display file
+//      list (file_name on print_orders) has just that entry stripped out
+//      so it doesn't look like a still-available file; nothing else about
+//      the order changes, and files_purged is NOT set by this rule (the
+//      order may still have other files to purge later under rule 1/3).
+//
+//   3. Weekly rule (new): any order marked "Delivered" whose order_date is
+//      more than 7 days old, files not yet purged — but ONLY if the admin
+//      has switched on "Automatically delete order files older than 7 days"
+//      in the app's Settings (app_settings key: auto_delete_old_files).
+//      This one does a full delete: removes the storage objects, deletes
+//      the print_order_files rows outright, and clears both file_path and
+//      file_name on the order, so nothing about the files is left in the
+//      database — matching the same standard as the manual admin
+//      "Delete Files" button.
+//
+// Rules run sequentially and each fully completes its DB writes before the
+// next one queries, so an order handled by an earlier rule is naturally
+// excluded from a later one (rule 1 and rule 3 both filter files_purged =
+// false; rule 2 re-checks which print_order_files rows still exist).
+//
+// This is meant to be triggered on a schedule (see the GitHub Actions cron)
+// rather than by end users, so it does its own extra check on top of
+// Supabase's built-in JWT verification (see CRON_SECRET below).
 
-on:
-  schedule:
-    # Runs roughly every 15 minutes. GitHub Actions cron isn't perfectly
-    # punctual (it can be a few minutes late under load), which is fine
-    # here since we only need "eventually, after the 2-hour mark".
-    - cron: "*/15 * * * *"
-  workflow_dispatch: {} # lets you trigger it manually from the Actions tab to test
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-jobs:
-  call-cleanup-function:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Call cleanup-delivered-files edge function
-        run: |
-          curl -sS -X POST "https://yfxpeznfjtchtbzbewio.supabase.co/functions/v1/cleanup-delivered-files" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            -d '{}' \
-            --fail-with-body
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Optional but recommended: set with `supabase secrets set CRON_SECRET=<long-random-string>`
+// so only your own cron job (which sends this header) can trigger a purge.
+const CRON_SECRET = Deno.env.get("CRON_SECRET");
+
+const STORAGE_BUCKET = "order-documents";
+const HOURS_AFTER_DELIVERY = 2;
+const DAYS_OLD_DELIVERED = 7;
+const ID_SCAN_PREFIX = "id_card_scan_";
+
+function parsePaths(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [raw];
+  } catch {
+    return [raw];
+  }
+}
+
+function isIdScanFileName(name: string | null | undefined): boolean {
+  return !!name && name.toLowerCase().startsWith(ID_SCAN_PREFIX);
+}
+
+// Removes one exact display entry (matched by its bare file name, ignoring
+// the " (xN copies)" / " [LAMINATE]" suffixes the order form adds) from the
+// comma-joined file_name string stored on print_orders.
+function stripEntryFromCombinedFileName(combined: string | null | undefined, bareNameToRemove: string): string {
+  if (!combined) return combined || "";
+  const parts = combined.split(",").map((p) => p.trim()).filter(Boolean);
+  const kept = parts.filter((p) => {
+    const bare = p.replace(/\s*\(x\d+\s*copies\)\s*/i, "").replace(/\s*\[LAMINATE\]\s*/i, "").trim();
+    return bare.toLowerCase() !== bareNameToRemove.toLowerCase();
+  });
+  return kept.join(", ");
+}
+
+// deno-lint-ignore no-explicit-any
+async function removePaths(admin: any, paths: Set<string>): Promise<number> {
+  const pathList = Array.from(paths);
+  if (pathList.length === 0) return 0;
+  const { data: removed, error } = await admin.storage.from(STORAGE_BUCKET).remove(pathList);
+  if (error) throw error;
+  return removed?.length || 0;
+}
+
+// ---------------------------------------------------------------------
+// Rule 1 (unchanged): Delivered more than 2 hours ago.
+// ---------------------------------------------------------------------
+// deno-lint-ignore no-explicit-any
+async function purgeByDeliveryAge(admin: any, deliveryCutoff: string) {
+  const { data: dueOrders, error: fetchErr } = await admin
+    .from("print_orders")
+    .select("order_no, file_path")
+    .eq("status", "Delivered")
+    .eq("files_purged", false)
+    .not("delivered_at", "is", null)
+    .lte("delivered_at", deliveryCutoff);
+
+  if (fetchErr) throw fetchErr;
+  if (!dueOrders || dueOrders.length === 0) {
+    return { purgedOrders: 0, deletedFiles: 0 };
+  }
+
+  const orderNos = dueOrders.map((o: { order_no: string }) => o.order_no);
+
+  const { data: fileRows } = await admin
+    .from("print_order_files")
+    .select("order_no, file_path")
+    .in("order_no", orderNos);
+
+  const paths = new Set<string>();
+  for (const o of dueOrders) for (const p of parsePaths(o.file_path)) paths.add(p);
+  for (const f of fileRows || []) for (const p of parsePaths(f.file_path)) paths.add(p);
+
+  const deletedFiles = await removePaths(admin, paths);
+
+  await admin
+    .from("print_orders")
+    .update({ files_purged: true, file_path: "" })
+    .in("order_no", orderNos);
+
+  await admin
+    .from("print_order_files")
+    .update({ file_path: "" })
+    .in("order_no", orderNos);
+
+  return { purgedOrders: orderNos.length, deletedFiles };
+}
+
+// ---------------------------------------------------------------------
+// Rule 2 (new): ID scan images, 2 hours after delivered_at, regardless of
+// the order's current status. Only the scan image is removed — every
+// other file in the order is left untouched.
+// ---------------------------------------------------------------------
+// deno-lint-ignore no-explicit-any
+async function purgeIdScanImages(admin: any, deliveryCutoff: string) {
+  // Deliberately NOT filtered by status: an order that was delivered and
+  // later reopened still has its old delivered_at, and its ID scan should
+  // still go. files_purged=false guards against orders rule 1 already
+  // wiped entirely this run (nothing left for this rule to find there).
+  const { data: candidateOrders, error: fetchErr } = await admin
+    .from("print_orders")
+    .select("order_no, file_name")
+    .not("delivered_at", "is", null)
+    .lte("delivered_at", deliveryCutoff)
+    .eq("files_purged", false);
+
+  if (fetchErr) throw fetchErr;
+  if (!candidateOrders || candidateOrders.length === 0) {
+    return { ordersAffected: 0, deletedFiles: 0 };
+  }
+
+  const orderNos = candidateOrders.map((o: { order_no: string }) => o.order_no);
+
+  const { data: fileRows, error: fileErr } = await admin
+    .from("print_order_files")
+    .select("order_no, file_name, file_path")
+    .in("order_no", orderNos);
+  if (fileErr) throw fileErr;
+
+  const idScanRows = (fileRows || []).filter((f: { file_name: string }) => isIdScanFileName(f.file_name));
+  if (idScanRows.length === 0) {
+    return { ordersAffected: 0, deletedFiles: 0 };
+  }
+
+  const paths = new Set<string>();
+  for (const f of idScanRows) for (const p of parsePaths(f.file_path)) paths.add(p);
+  const deletedFiles = await removePaths(admin, paths);
+
+  const orderByNo = new Map(candidateOrders.map((o: { order_no: string; file_name: string }) => [o.order_no, o]));
+  const affectedOrderNos = new Set<string>();
+
+  for (const row of idScanRows) {
+    // Delete just this one file's row (matched on order_no + file_path,
+    // which is unique per uploaded file since it includes a timestamp).
+    await admin
+      .from("print_order_files")
+      .delete()
+      .eq("order_no", row.order_no)
+      .eq("file_path", row.file_path);
+
+    const order = orderByNo.get(row.order_no);
+    if (order) {
+      const cleanedName = stripEntryFromCombinedFileName(order.file_name, row.file_name);
+      await admin.from("print_orders").update({ file_name: cleanedName }).eq("order_no", row.order_no);
+    }
+    affectedOrderNos.add(row.order_no);
+  }
+
+  return { ordersAffected: affectedOrderNos.size, deletedFiles };
+}
+
+// ---------------------------------------------------------------------
+// Rule 3 (new): Delivered orders older than 7 days, gated by the toggle.
+// Full delete — nothing left referencing the files anywhere in the DB.
+// ---------------------------------------------------------------------
+// deno-lint-ignore no-explicit-any
+async function purgeOldDeliveredByWeeklyRule(admin: any) {
+  const { data: settingRow } = await admin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "auto_delete_old_files")
+    .maybeSingle();
+
+  const enabled = !!settingRow?.value?.enabled;
+  if (!enabled) return { enabled: false, purgedOrders: 0, deletedFiles: 0 };
+
+  const ageCutoff = new Date(Date.now() - DAYS_OLD_DELIVERED * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: dueOrders, error: fetchErr } = await admin
+    .from("print_orders")
+    .select("order_no, file_path")
+    .eq("status", "Delivered")
+    .eq("files_purged", false)
+    .lte("order_date", ageCutoff);
+
+  if (fetchErr) throw fetchErr;
+  if (!dueOrders || dueOrders.length === 0) {
+    return { enabled: true, purgedOrders: 0, deletedFiles: 0 };
+  }
+
+  const orderNos = dueOrders.map((o: { order_no: string }) => o.order_no);
+
+  const { data: fileRows } = await admin
+    .from("print_order_files")
+    .select("order_no, file_path")
+    .in("order_no", orderNos);
+
+  const paths = new Set<string>();
+  for (const o of dueOrders) for (const p of parsePaths(o.file_path)) paths.add(p);
+  for (const f of fileRows || []) for (const p of parsePaths(f.file_path)) paths.add(p);
+
+  const deletedFiles = await removePaths(admin, paths);
+
+  // Full delete: clear file_name too, and remove the per-file rows outright
+  // — nothing about the files is left anywhere in the database.
+  await admin
+    .from("print_orders")
+    .update({ files_purged: true, file_path: "", file_name: "" })
+    .in("order_no", orderNos);
+
+  await admin
+    .from("print_order_files")
+    .delete()
+    .in("order_no", orderNos);
+
+  return { enabled: true, purgedOrders: orderNos.length, deletedFiles };
+}
+
+Deno.serve(async (req) => {
+  if (CRON_SECRET) {
+    const provided = req.headers.get("x-cron-secret");
+    if (provided !== CRON_SECRET) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    }
+  }
+
+  const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const deliveryCutoff = new Date(Date.now() - HOURS_AFTER_DELIVERY * 60 * 60 * 1000).toISOString();
+
+  try {
+    // Each rule runs fully (including its DB writes) before the next
+    // queries, so an order handled by an earlier rule is never
+    // double-processed by a later one.
+    const deliveryAgeResult = await purgeByDeliveryAge(admin, deliveryCutoff);
+    const idScanResult = await purgeIdScanImages(admin, deliveryCutoff);
+    const weeklyRuleResult = await purgeOldDeliveredByWeeklyRule(admin);
+
+    return new Response(
+      JSON.stringify({
+        deliveryAgeRule: deliveryAgeResult,
+        idScanRule: idScanResult,
+        weeklyRule: weeklyRuleResult,
+        purgedOrders: deliveryAgeResult.purgedOrders + weeklyRuleResult.purgedOrders,
+        deletedFiles: deliveryAgeResult.deletedFiles + idScanResult.deletedFiles + weeklyRuleResult.deletedFiles,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
+  }
+});
