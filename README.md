@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://YOUR-PORTFOLIO.web.app"><img src="https://img.shields.io/badge/PORTFOLIO-VISIT-0b0b0c?style=for-the-badge&logo=googlechrome&logoColor=00D2BE&labelColor=1a1c1e&color=0b0b0c" alt="Portfolio" /></a>
+  <a href="https://mr-mk-lushaba.web.app/"><img src="https://img.shields.io/badge/PORTFOLIO-VISIT-0b0b0c?style=for-the-badge&logo=googlechrome&logoColor=00D2BE&labelColor=1a1c1e&color=0b0b0c" alt="Portfolio" /></a>
   <a href="mailto:minikl9949@gmail.com"><img src="https://img.shields.io/badge/EMAIL-MINIKL9949%40GMAIL.COM-0b0b0c?style=for-the-badge&logo=gmail&logoColor=C9CCCF&labelColor=1a1c1e" alt="Email" /></a>
   <a href="https://wa.me/27766473143"><img src="https://img.shields.io/badge/WHATSAPP-076%20647%203143-0b0b0c?style=for-the-badge&logo=whatsapp&logoColor=00D2BE&labelColor=1a1c1e" alt="WhatsApp" /></a>
 </p>
