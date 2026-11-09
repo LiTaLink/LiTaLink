@@ -37,7 +37,7 @@
     </td>
     <td width="33%" valign="top">
       <h3>Resume Builder</h3>
-      <p>About 30 layouts. Import an old resume from a PDF or photo (OCR). Export to PDF or Word.</p>
+      <p>About 30+ layouts. Import an old resume from a PDF or photo (OCR). Export to PDF or Word.</p>
       <p>AI job matches, ATS check, interview prep and cover letters.</p>
       <br />
       <a href="https://llitalink.online"><img src="https://img.shields.io/badge/LIVE%20SITE-OPEN-0b0b0c?style=for-the-badge&logo=googlechrome&logoColor=00D2BE&labelColor=1a1c1e" /></a>
